@@ -1,6 +1,6 @@
 // Offline-ondersteuning. Verhoog VERSIE bij elke release zodat telefoons de nieuwe versie ophalen.
-const VERSIE = 'gezinsplan-1';
-const SHELL = ['./', 'index.html', 'config.js', 'supabase.js', '591.supabase.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+const VERSIE = 'gezinsplan-2';
+const SHELL = ['./', 'index.html', 'config.js', 'supabase.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSIE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSIE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
