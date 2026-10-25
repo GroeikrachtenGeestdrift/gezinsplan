@@ -4,8 +4,8 @@
 -- STAP 1: wie mag erin
 create table if not exists public.leden (email text primary key);
 insert into public.leden (email) values
-  ('jouw@email.nl'),
-  ('partner@email.nl')
+  ('info@groeikrachtengeestdrift.nl'),
+  ('pentermanlaura@gmail.com')
 on conflict do nothing;
 
 -- STAP 2: één tabel voor alle gegevens van de app

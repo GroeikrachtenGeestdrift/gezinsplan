@@ -5,7 +5,7 @@ window.GEZINSPLAN_CONFIG = {
   supabaseKey: "sb_publishable_Omf8FGEJ6DcJfsOmMxjMyg_MsvgLuhY",
   // Wie is wie: bij inloggen opent de app meteen het juiste profiel.
   leden: [
-    { email: "", persoon: "p1" },
-    { email: "", persoon: "p2" }
+    { email: "info@groeikrachtengeestdrift.nl", persoon: "p1" },
+    { email: "pentermanlaura@gmail.com", persoon: "p2" }
   ]
 };
