@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gezinsplan</title>
+<meta name="theme-color" content="#0B6B5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gezinsplan">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: mobiele app — compacte kop met persoonwissel, één kolom kaarten (max 720px), vaste tabbalk onderin, keuzelijsten als bottom sheet */
+:root{
+  --bg:#EEF3F1; --surface:#FFFFFF; --surface2:#E3EBE8; --ink:#13201C; --muted:#56675F; --line:#D2DDD8;
+  --accent:#0B6B5F; --accent-soft:#D3EAE5; --on-accent:#FFFFFF; --scrim:rgba(10,20,17,.45);
+  --kracht:#0B6B5F; --cardio:#2C67A8; --voetbal:#3B7F2E; --rust:#7F8C87; --prep:#B47A0A; --sport:#7A4FA0;
+  --good:#2E7D45; --warn:#B47A0A; --bad:#B23E2C;
+  --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,-apple-system,sans-serif;
+  --nav-h:62px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1513; --surface:#16201D; --surface2:#1E2A26; --ink:#E4EDEA; --muted:#98ABA4; --line:#2A3833;
+  --accent:#40B5A4; --accent-soft:#173A35; --on-accent:#08201C; --scrim:rgba(0,0,0,.6);
+  --kracht:#40B5A4; --cardio:#6FA3E2; --voetbal:#79BE69; --rust:#7D8B86; --prep:#E3AE45; --sport:#B48BDA;
+  --good:#6CC07E; --warn:#E3AE45; --bad:#E57A66; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E1513; --surface:#16201D; --surface2:#1E2A26; --ink:#E4EDEA; --muted:#98ABA4; --line:#2A3833;
+  --accent:#40B5A4; --accent-soft:#173A35; --on-accent:#08201C; --scrim:rgba(0,0,0,.6);
+  --kracht:#40B5A4; --cardio:#6FA3E2; --voetbal:#79BE69; --rust:#7D8B86; --prep:#E3AE45; --sport:#B48BDA;
+  --good:#6CC07E; --warn:#E3AE45; --bad:#E57A66; color-scheme:dark }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--surface)}
+body.sheet-open{overflow:hidden}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.toprow{display:flex;align-items:center;gap:10px;padding-block:10px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:19px;letter-spacing:-.01em;margin-right:auto;min-width:0}
+.brand small{display:block;font-family:var(--f-body);font-weight:500;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;background:var(--surface2);border-radius:999px;padding:3px;gap:2px;flex:0 0 auto}
+.seg button{border:0;background:transparent;color:var(--muted);font:600 15px var(--f-body);min-height:38px;padding:0 14px;border-radius:999px;cursor:pointer;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+main{padding-block:14px calc(var(--nav-h) + 28px + env(safe-area-inset-bottom,0px));display:grid;gap:12px}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.bottom .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav.bottom button{border:0;background:transparent;color:var(--muted);font:600 11.5px var(--f-body);height:var(--nav-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+nav.bottom svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+nav.bottom button[aria-current="page"]{color:var(--accent)}
+nav.bottom button[aria-current="page"] svg{stroke-width:2.4}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card h2{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.2;margin:0 0 4px;text-wrap:balance;letter-spacing:-.01em}
+.card h3{font-size:15.5px;font-weight:700;margin:16px 0 6px}
+.sub{color:var(--muted);font-size:14px;margin:0 0 10px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.between>div{min-width:0}
+.num{font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--surface2);color:var(--ink);white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--rust));display:inline-block}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--muted)}
+.t-rust{--c:var(--rust)} .t-krachtA,.t-krachtB{--c:var(--kracht)} .t-cardio{--c:var(--cardio)} .t-voetbal{--c:var(--voetbal)} .t-voorbereiding{--c:var(--prep)} .t-sport{--c:var(--sport)}
+.weeknav{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.weeknav strong{font-family:var(--f-display);font-size:16px;text-align:center}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;cursor:pointer;flex:0 0 auto}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:10px}
+.day{border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:7px 0 6px;text-align:center;cursor:pointer;color:var(--ink);font:inherit;position:relative;overflow:hidden;min-height:58px}
+.day::after{content:"";position:absolute;left:8px;right:8px;bottom:4px;height:4px;border-radius:4px;background:var(--c,var(--rust))}
+.day b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.day span{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.day[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px var(--f-body);min-height:44px;padding:0 16px;border-radius:11px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.small{min-height:38px;padding:0 12px;font-size:14px}
+.btn.block{width:100%}
+.btn.ghost{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+:is(.btn,.day,.iconbtn,nav.bottom button,.seg button,.chip,.opt,input,select,textarea,summary):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0;min-height:44px}
+input[type=number]{width:84px}
+textarea{width:100%;min-height:80px}
+input[type=checkbox]{min-height:0;width:22px;height:22px;accent-color:var(--accent)}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.fgrid input,.fgrid select{width:100%}
+.targets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.tgt{background:var(--surface2);border-radius:10px;padding:8px 6px;text-align:center}
+.tgt b{display:block;font-size:18px;font-family:var(--f-display);line-height:1.2}
+.tgt span{font-size:11.5px;color:var(--muted)}
+.bars{display:grid;gap:10px}
+.bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-top:4px}
+.bar>div{height:100%;background:var(--accent)}
+.bar.over>div{background:var(--warn)}
+.meal{border-top:1px solid var(--line);padding:12px 0}
+.meal:first-child{border-top:0;padding-top:4px}
+.meal .mh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.meal .mh .t{min-width:0}
+.meal .lbl{font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.meal .name{font-weight:700;font-size:16px;line-height:1.3}
+.meal ul{margin:6px 0 0;padding-left:18px}
+.meal li{font-size:14.5px}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+.note{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:14.5px}
+.ex{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px}
+.ex b.n{font-size:16px}
+.ex select{width:100%}
+.setrow{display:grid;grid-template-columns:42px 1fr 1fr;gap:8px;align-items:center}
+.setrow.one{grid-template-columns:42px 1fr}
+.setrow .lbl{font-size:12.5px;color:var(--muted);font-weight:700}
+.stepper{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.stepper button{border:0;background:var(--surface2);color:var(--ink);font:700 20px var(--f-body);cursor:pointer;min-height:44px}
+.stepper input{border:0;border-radius:0;text-align:center;width:100%;padding:6px 2px;min-height:44px;font-variant-numeric:tabular-nums}
+.stepper .u{grid-column:1/-1;text-align:center;font-size:11px;color:var(--muted);padding:2px 0;border-top:1px solid var(--line)}
+.tip{font-size:13.5px;color:var(--muted)}
+.prog{font-size:13.5px;font-weight:600;color:var(--good)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.shop label{display:flex;gap:12px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line);cursor:pointer;min-height:48px}
+.shop label .n{flex:1;min-width:0}
+.shop label .q{text-align:right;font-variant-numeric:tabular-nums;font-size:13.5px;color:var(--muted)}
+.shop label.done .n{text-decoration:line-through;color:var(--muted)}
+.cat{margin:16px 0 2px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+details summary{cursor:pointer;font-weight:600;min-height:40px;display:flex;align-items:center}
+.dcard{border-top:1px solid var(--line);padding:12px 0;display:grid;gap:6px}
+.dcard:first-child{border-top:0}
+.dcard .dname{font-weight:700;font-size:16.5px;line-height:1.3}
+.status{font-size:12px;color:var(--muted)}
+.status.ok{color:var(--good)}
+.status.err{color:var(--bad)}
+.chart svg{width:100%;height:auto;display:block}
+.tpl-row{display:grid;grid-template-columns:minmax(0,1fr) 84px 44px;gap:6px;align-items:center;margin-bottom:6px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0}
+.routine{counter-reset:r;list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.routine li{display:flex;gap:10px;align-items:baseline}
+.routine li::before{counter-increment:r;content:counter(r);font-family:var(--f-display);font-weight:700;color:var(--accent);min-width:16px}
+.tiles{display:grid;gap:10px}
+.tile{display:flex;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 16px;font:inherit;color:var(--ink);cursor:pointer;min-height:64px}
+.tile b{display:block;font-size:16px}
+.tile span{font-size:13.5px;color:var(--muted)}
+.kennis p{max-width:66ch}
+/* bottom sheet */
+#sheet{position:fixed;inset:0;z-index:30}
+#sheet .scrim{position:absolute;inset:0;background:var(--scrim)}
+#sheet .panel{position:absolute;left:0;right:0;bottom:0;max-height:88%;background:var(--surface);border-radius:18px 18px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px);max-width:720px;margin:0 auto}
+#sheet .head{padding:10px max(16px,env(safe-area-inset-left,0px)) 10px max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);display:grid;gap:10px}
+#sheet .grip{width:40px;height:5px;border-radius:5px;background:var(--line);margin:0 auto}
+#sheet .list{overflow-y:auto;padding:6px max(16px,env(safe-area-inset-left,0px)) 16px max(16px,env(safe-area-inset-right,0px));-webkit-overflow-scrolling:touch}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--f-body);min-height:36px;padding:0 13px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.opt{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;padding:12px 2px;cursor:pointer}
+.opt[aria-selected="true"]{background:var(--accent-soft);border-radius:10px;padding-inline:10px}
+.opt b{display:block;font-size:15.5px;line-height:1.3}
+.opt .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center}
+.opt .meta .k{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rbtn{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:inherit;padding:4px 0;cursor:pointer;min-height:44px}
+.rbtn b{font-size:15.5px}.rbtn span{grid-column:1;font-size:13.5px;color:var(--muted)}.rbtn em{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-size:13px;font-weight:700;color:var(--accent)}
+.routine li::before{align-self:center}
+.anim{background:var(--surface2);border-radius:14px;overflow:hidden;aspect-ratio:1/1;max-width:100%;max-height:46vh;margin:10px auto 12px;display:grid;place-items:center}
+.anim video{width:100%;height:100%;object-fit:contain;display:block;background:var(--surface2)}
+.anim-ph{display:grid;justify-items:center;gap:6px;color:var(--muted);font-size:14px}
+.anim-ph svg{width:40px;height:40px;fill:var(--line)}
+.steps{margin:0 0 12px;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.applybar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:380px){.targets{grid-template-columns:repeat(2,minmax(0,1fr))}.day span{font-size:13.5px}}
+@media (prefers-reduced-motion:no-preference){.bar>div{transition:width .3s ease}#sheet .panel{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding-top:env(safe-area-inset-top,0px)}
+img,video{max-width:100%}
+[hidden]{display:none!important}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="wrap toprow">
+    <div class="brand">Gezinsplan<small id="savestate">Laden…</small></div>
+    <div class="seg" id="personSeg" role="group" aria-label="Persoon"></div>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+<nav class="bottom" aria-label="Onderdelen"><div class="in" id="nav"></div></nav>
+<div id="sheet" hidden></div>
+
+<script src="config.js"></script>
+<script src="supabase.js"></script>
+<script>
+"use strict";
+/* ================= INGREDIËNTEN ================= */
+const DAYS=['ma','di','wo','do','vr','za','zo'];
+const DAYN={ma:'Maandag',di:'Dinsdag',wo:'Woensdag',do:'Donderdag',vr:'Vrijdag',za:'Zaterdag',zo:'Zondag'};
+const TYPES={rust:'Herstel',krachtA:'Kracht A',krachtB:'Kracht B',cardio:'Cardio',voetbal:'Voetbal',voorbereiding:'Voorbereiding voetbal',sport:'Andere sport'};
+const BONUS={rust:0,krachtA:150,krachtB:150,cardio:150,voetbal:400,voorbereiding:200,sport:150};
+const KMULT_HINT={rust:'gewone portie',krachtA:'iets meer koolhydraten',krachtB:'iets meer koolhydraten',cardio:'iets meer koolhydraten',voetbal:'ruime koolhydraten',voorbereiding:'extra koolhydraten voor zondag',sport:'iets meer koolhydraten'};
+// id: [naam, kcal, eiwit, kh, vet per 100 g, categorie, verpakking (g), gram per stuk, eenheid]
+const ING={
+ skyr:['Skyr naturel',63,11,4,0.2,'Zuivel & eieren',450],
+ kwark:['Magere kwark',50,9,4,0.1,'Zuivel & eieren',500],
+ griekse:['Griekse yoghurt 2%',75,9,4,2,'Zuivel & eieren',500],
+ melk:['Halfvolle melk',46,3.5,4.7,1.5,'Zuivel & eieren',1000,0,'ml'],
+ huttenkase:['Hüttenkäse',90,12,3,4,'Zuivel & eieren',200],
+ ei:['Eieren',140,12.5,0.5,10,'Zuivel & eieren',600,60],
+ kaas:['Kaas 30+ (plakken)',286,30,0,17,'Zuivel & eieren',300],
+ geraspt:['Geraspte kaas',390,27,0,31,'Zuivel & eieren',150],
+ feta:['Feta',260,14,4,21,'Zuivel & eieren',200],
+ mozzarella:['Mozzarella light',160,20,1,9,'Zuivel & eieren',125],
+ halloumi:['Halloumi',320,22,2,25,'Zuivel & eieren',225],
+ kipfilet:['Kipfilet',110,24,0,1.5,'Vlees, vis & vega',300],
+ kipdij:['Kippendijfilet',160,19,0,9,'Vlees, vis & vega',400],
+ kipgehakt:['Kipgehakt',150,20,0,8,'Vlees, vis & vega',400],
+ kalkoen:['Kalkoenfilet',105,24,0,1,'Vlees, vis & vega',400],
+ kipbeleg:['Kipfilet (beleg)',105,22,1,1.5,'Vlees, vis & vega',150],
+ gehakt:['Rundergehakt mager',170,21,0,9.5,'Vlees, vis & vega',500],
+ biefstuk:['Biefstuk / runderreepjes',130,23,0,4,'Vlees, vis & vega',300],
+ varkenshaas:['Varkenshaas',120,22,0,3.5,'Vlees, vis & vega',400],
+ rookworst:['Rookworst light',180,16,3,11,'Vlees, vis & vega',250],
+ zalm:['Zalmfilet',200,20,0,13,'Vlees, vis & vega',250],
+ zalmgerookt:['Gerookte zalm',180,22,0,10,'Vlees, vis & vega',100],
+ kabeljauw:['Kabeljauwfilet',80,18,0,0.7,'Vlees, vis & vega',400],
+ koolvis:['Koolvisfilet',80,18,0,1,'Vlees, vis & vega',400],
+ garnalen:['Garnalen (gepeld)',75,17,0,1,'Vlees, vis & vega',200],
+ makreel:['Gerookte makreel',230,19,0,17,'Vlees, vis & vega',200],
+ tofu:['Tofu naturel',120,13,2,7,'Vlees, vis & vega',375],
+ tempeh:['Tempeh',190,19,8,9,'Vlees, vis & vega',200],
+ falafel:['Falafel (koelvers)',230,7,25,11,'Vlees, vis & vega',250],
+ aardappel:['Aardappelen',77,2,17,0.1,'Groente',1500],
+ zoeteaardappel:['Zoete aardappel',86,1.6,20,0.1,'Groente',1000],
+ broccoli:['Broccoli',34,2.8,7,0.4,'Groente',500],
+ bloemkool:['Bloemkool',25,2,4,0.3,'Groente',600],
+ paprika:['Paprika',30,1,6,0.3,'Groente',450,150],
+ courgette:['Courgette',17,1.2,3,0.3,'Groente',300,300],
+ aubergine:['Aubergine',24,1,5,0.2,'Groente',300,300],
+ spinazie:['Spinazie',23,2.9,3.6,0.4,'Groente',400],
+ boerenkool:['Boerenkool (gesneden)',40,3.5,5,0.6,'Groente',500],
+ andijvie:['Andijvie',14,1.3,2.3,0.2,'Groente',400],
+ zuurkool:['Zuurkool',20,1,2,0.3,'Groente',500],
+ spitskool:['Spitskool',25,1.3,5,0.1,'Groente',600],
+ sperzie:['Sperziebonen',31,1.8,7,0.2,'Groente',300],
+ wortel:['Wortels',41,0.9,10,0.2,'Groente',500],
+ prei:['Prei',30,1.5,6,0.3,'Groente',400,200],
+ pompoen:['Pompoen',26,1,6,0.1,'Groente',1000],
+ paksoi:['Paksoi',13,1.5,2,0.2,'Groente',300],
+ tauge:['Taugé',30,3,6,0.2,'Groente',200],
+ biet:['Rode bieten (gekookt)',43,1.6,10,0.2,'Groente',500],
+ ui:['Uien',40,1.1,9,0.1,'Groente',1000,100],
+ champignon:['Champignons',22,3,3,0.3,'Groente',250],
+ tomaat:['Tomaten',18,0.9,3.9,0.2,'Groente',500,100],
+ cherrytomaat:['Cherrytomaten',18,0.9,3.9,0.2,'Groente',250],
+ komkommer:['Komkommer',12,0.6,2,0.1,'Groente',400,400],
+ sla:['Sla / rauwkostmix',17,1,3,0.2,'Groente',200],
+ avocado:['Avocado',160,2,2,15,'Groente',140,140],
+ sinaasappel:['Sinaasappels',47,0.9,12,0.1,'Fruit',1500,150],
+ banaan:['Bananen',89,1.1,23,0.3,'Fruit',600,120],
+ appel:['Appels',52,0.3,14,0.2,'Fruit',900,150],
+ kiwi:['Kiwi\'s',60,1.1,14,0.5,'Fruit',450,75],
+ bessen:['Rood fruit (diepvries)',50,1,10,0.3,'Fruit',450],
+ brood:['Volkorenbrood (sneetje 35 g)',240,10,41,3,'Brood & granen',800,35],
+ roggebrood:['Roggebrood (sneetje 40 g)',210,6,40,1.5,'Brood & granen',500,40],
+ crackers:['Volkoren crackers',400,12,65,7,'Brood & granen',250,10],
+ wrap:['Volkoren wraps',300,9,48,7,'Brood & granen',480,60],
+ pita:['Volkoren pitabroodjes',250,9,48,2,'Brood & granen',420,70],
+ rijstwafel:['Rijstwafels',380,8,80,3,'Brood & granen',130,8],
+ havermout:['Havermout',370,13,59,7,'Brood & granen',500],
+ muesli:['Muesli (ongezoet)',370,10,62,7,'Brood & granen',750],
+ rijst:['Zilvervliesrijst',355,8,75,2.5,'Brood & granen',400],
+ pasta:['Volkorenpasta',350,13,65,2.5,'Brood & granen',500],
+ mie:['Volkoren mie',350,12,70,2,'Brood & granen',250],
+ couscous:['Volkoren couscous',355,12,70,2,'Brood & granen',500],
+ bulgur:['Bulgur',340,12,70,1.5,'Brood & granen',500],
+ quinoa:['Quinoa',360,14,64,6,'Brood & granen',300],
+ gnocchi:['Gnocchi',150,4,32,0.5,'Brood & granen',500],
+ tonijn:['Tonijn in water (uitgelekt)',115,26,0,1,'Voorraadkast',120],
+ linzen:['Linzen (blik, uitgelekt)',110,8,15,0.5,'Voorraadkast',265],
+ kikkererwt:['Kikkererwten (blik, uitgelekt)',130,7,17,2.5,'Voorraadkast',265],
+ kidney:['Kidneybonen (blik, uitgelekt)',110,8,15,0.5,'Voorraadkast',265],
+ zwartebonen:['Zwarte bonen (blik, uitgelekt)',110,7,15,0.5,'Voorraadkast',265],
+ wittebonen:['Witte bonen (blik, uitgelekt)',100,7,14,0.5,'Voorraadkast',265],
+ spliterwten:['Spliterwten (droog)',340,23,48,1.5,'Voorraadkast',500],
+ mais:['Maïs (blik)',80,3,14,1.5,'Voorraadkast',285],
+ passata:['Passata / tomatenblokjes',25,1.2,4,0.2,'Voorraadkast',500],
+ kokosmelk:['Kokosmelk light',75,0.8,2,7,'Voorraadkast',400],
+ hummus:['Hummus',300,8,14,24,'Voorraadkast',200],
+ sojasaus:['Sojasaus (minder zout)',60,6,6,0,'Voorraadkast',150,0,'ml'],
+ noten:['Ongezouten noten',620,20,10,54,'Voorraadkast',200],
+ pindakaas:['Pindakaas',600,25,15,50,'Voorraadkast',350],
+ honing:['Honing',300,0,82,0,'Voorraadkast',350],
+ jam:['Jam (minder suiker)',150,0.5,36,0,'Voorraadkast',300],
+ halvarine:['Halvarine',360,0,0,40,'Voorraadkast',250],
+ pesto:['Pesto',450,5,5,45,'Voorraadkast',190],
+ olie:['Olijfolie',884,0,0,100,'Voorraadkast',500,0,'ml'],
+};
+const CATS=['Groente','Fruit','Zuivel & eieren','Vlees, vis & vega','Brood & granen','Voorraadkast'];
+const COUNT=['ei','brood','roggebrood','wrap','pita','sinaasappel','banaan','appel','kiwi','rijstwafel','avocado'];
+
+/* ================= DINERS (per volwassen basisportie; rol e=eiwit, k=koolhydraat, g=groente, v=overig) ================= */
+const TAGS={kip:'Kip & kalkoen',vlees:'Vlees',vis:'Vis',vega:'Vega',pasta:'Pasta',hollands:'Hollands',snel:'Snel (≤ 30 min)',oven:'Oven',kids:'Kidsfavoriet'};
+const D=(n,t,i,min)=>({n,t,i,min});
+const DISH={
+ d1:D('Kip met broccoli en aardappelen',['kip','snel'],[['kipfilet',150,'e'],['aardappel',250,'k'],['broccoli',200,'g'],['olie',8,'v']],30),
+ d5:D('Kipcurry met spinazie en rijst',['kip'],[['kipdij',140,'e'],['rijst',75,'k'],['spinazie',100,'g'],['paprika',100,'g'],['kokosmelk',100,'v']],35),
+ d6:D('Wraps met kip en rauwkost',['kip','snel','kids'],[['kipfilet',140,'e'],['wrap',120,'k'],['paprika',100,'g'],['sla',50,'g'],['cherrytomaat',80,'g'],['feta',25,'v']],20),
+ d11:D('Pasta pesto met kip en courgette',['kip','pasta','snel','kids'],[['kipfilet',130,'e'],['pasta',90,'k'],['cherrytomaat',100,'g'],['courgette',100,'g'],['pesto',20,'v']],25),
+ d14:D('Traybake kip, kikkererwten en zoete aardappel',['kip','oven'],[['kipdij',120,'e'],['kikkererwt',100,'e'],['zoeteaardappel',200,'k'],['paprika',100,'g'],['ui',50,'g'],['olie',10,'v']],45),
+ d17:D('Ovenschotel kip, broccoli en rijst',['kip','oven','kids'],[['kipfilet',140,'e'],['rijst',75,'k'],['broccoli',200,'g'],['geraspt',15,'v']],40),
+ d18:D('Wrap-pizza met kip en groente',['kip','snel','kids'],[['wrap',120,'k'],['mozzarella',80,'e'],['kipbeleg',50,'e'],['passata',60,'g'],['champignon',60,'g'],['paprika',60,'g']],20),
+ d19:D('Kipsaté met rijst en sperziebonen',['kip','kids'],[['kipfilet',150,'e'],['rijst',75,'k'],['sperzie',200,'g'],['pindakaas',20,'v'],['sojasaus',10,'v']],30),
+ d20:D('Kip-teriyaki met mie en paksoi',['kip','snel'],[['kipfilet',140,'e'],['mie',80,'k'],['paksoi',150,'g'],['wortel',80,'g'],['sojasaus',15,'v']],20),
+ d21:D('Kipfajitas met paprika en yoghurt',['kip','snel','kids'],[['kipfilet',140,'e'],['wrap',120,'k'],['paprika',150,'g'],['ui',50,'g'],['mais',50,'g'],['griekse',50,'v']],20),
+ d22:D('Kipgehaktballetjes met bulgur en tomatensalade',['kip'],[['kipgehakt',140,'e'],['bulgur',75,'k'],['tomaat',150,'g'],['komkommer',100,'g'],['griekse',50,'v']],30),
+ d23:D('Kip tikka uit de oven met bloemkool en rijst',['kip','oven'],[['kipdij',140,'e'],['rijst',60,'k'],['bloemkool',200,'g'],['griekse',50,'v']],40),
+ d24:D('Caesarsalade met kip, ei en croutons',['kip','snel'],[['kipfilet',130,'e'],['ei',60,'e'],['brood',70,'k'],['sla',120,'g'],['geraspt',15,'v'],['griekse',40,'v']],20),
+ d25:D('Kippensoep met groente en volkorenbrood',['kip','kids'],[['kipfilet',130,'e'],['brood',105,'k'],['wortel',100,'g'],['prei',100,'g'],['ui',50,'g']],40),
+ d33:D('Kalkoen met zoete aardappel en broccoli',['kip','oven'],[['kalkoen',150,'e'],['zoeteaardappel',250,'k'],['broccoli',200,'g'],['olie',8,'v']],35),
+ d3:D('Volkorenpasta bolognese',['vlees','pasta','kids'],[['gehakt',125,'e'],['pasta',90,'k'],['passata',150,'g'],['courgette',100,'g'],['ui',50,'g'],['geraspt',10,'v']],30),
+ d4:D('Chili con carne met rijst',['vlees'],[['gehakt',100,'e'],['kidney',100,'e'],['rijst',75,'k'],['paprika',150,'g'],['passata',100,'g'],['ui',50,'g']],35),
+ d12:D('Gehaktballetjes in tomatensaus met couscous',['vlees','kids'],[['gehakt',125,'e'],['couscous',75,'k'],['passata',150,'g'],['courgette',100,'g'],['ui',50,'g']],30),
+ d16:D('Andijviestamppot met gehaktbal',['vlees','hollands','kids'],[['gehakt',120,'e'],['aardappel',300,'k'],['andijvie',200,'g'],['melk',50,'v']],35),
+ d26:D('Boerenkoolstamppot met rookworst light',['vlees','hollands','kids'],[['rookworst',80,'e'],['aardappel',300,'k'],['boerenkool',200,'g'],['melk',50,'v']],35),
+ d27:D('Zuurkoolstamppot met gehakt',['vlees','hollands'],[['gehakt',110,'e'],['aardappel',300,'k'],['zuurkool',200,'g'],['melk',40,'v']],35),
+ d28:D('Hutspot met runderreepjes',['vlees','hollands'],[['biefstuk',140,'e'],['aardappel',250,'k'],['wortel',150,'g'],['ui',80,'g'],['melk',40,'v']],35),
+ d29:D('Varkenshaas met spitskool en krieltjes',['vlees'],[['varkenshaas',140,'e'],['aardappel',250,'k'],['spitskool',200,'g'],['olie',8,'v']],30),
+ d30:D('Biefstuk met gebakken aardappelen en sperziebonen',['vlees'],[['biefstuk',140,'e'],['aardappel',250,'k'],['sperzie',200,'g'],['olie',8,'v']],30),
+ d31:D('Volkoren lasagne met groente',['vlees','pasta','oven','kids'],[['gehakt',110,'e'],['pasta',80,'k'],['passata',150,'g'],['courgette',100,'g'],['spinazie',80,'g'],['mozzarella',30,'v']],60),
+ d32:D('Burrito bowl met gehakt en zwarte bonen',['vlees','snel'],[['gehakt',100,'e'],['zwartebonen',80,'e'],['rijst',70,'k'],['mais',60,'g'],['paprika',100,'g'],['avocado',40,'v']],25),
+ d34:D('Burgers op volkorenbrood met salade',['vlees','snel','kids'],[['gehakt',125,'e'],['brood',70,'k'],['sla',50,'g'],['tomaat',100,'g'],['ui',30,'g'],['kaas',20,'v']],25),
+ d55:D('Erwtensoep (light) met roggebrood',['vlees','hollands'],[['spliterwten',80,'e'],['rookworst',40,'e'],['roggebrood',80,'k'],['wortel',100,'g'],['prei',100,'g'],['ui',50,'g']],90),
+ d2:D('Zalm met zoete aardappel en sperziebonen',['vis','oven'],[['zalm',125,'e'],['zoeteaardappel',250,'k'],['sperzie',200,'g'],['olie',5,'v']],35),
+ d7:D('Kabeljauw uit de oven met krieltjes en spinazie',['vis','oven'],[['kabeljauw',175,'e'],['aardappel',250,'k'],['spinazie',200,'g'],['olie',10,'v']],35),
+ d15:D('Romige zalmpasta met spinazie',['vis','pasta','snel'],[['zalm',110,'e'],['pasta',85,'k'],['spinazie',150,'g'],['cherrytomaat',80,'g']],25),
+ d35:D('Roerbak garnalen met mie en paksoi',['vis','snel'],[['garnalen',150,'e'],['mie',80,'k'],['paksoi',150,'g'],['paprika',100,'g'],['sojasaus',10,'v']],20),
+ d36:D('Vispakketje koolvis met couscous',['vis','oven'],[['koolvis',175,'e'],['couscous',75,'k'],['courgette',150,'g'],['tomaat',100,'g'],['olie',8,'v']],30),
+ d37:D('Tonijnpastasalade met maïs',['vis','pasta','snel'],[['tonijn',120,'e'],['pasta',85,'k'],['mais',60,'g'],['komkommer',100,'g'],['griekse',40,'v']],20),
+ d38:D('Visstoofpotje met prei en aardappel',['vis'],[['koolvis',160,'e'],['aardappel',250,'k'],['prei',150,'g'],['wortel',100,'g'],['passata',100,'g']],40),
+ d39:D('Zalm-teriyaki met rijst en broccoli',['vis','snel'],[['zalm',125,'e'],['rijst',70,'k'],['broccoli',200,'g'],['sojasaus',15,'v']],25),
+ d40:D('Gerookte makreel met bietjes en aardappel',['vis','snel','hollands'],[['makreel',100,'e'],['aardappel',250,'k'],['biet',150,'g'],['sla',50,'g']],25),
+ d41:D('Pasta met garnalen, tomaat en courgette',['vis','pasta','snel'],[['garnalen',140,'e'],['pasta',85,'k'],['courgette',150,'g'],['cherrytomaat',100,'g'],['olie',8,'v']],20),
+ d42:D('Vistaco\'s met koolvis en spitskool',['vis','snel','kids'],[['koolvis',150,'e'],['wrap',120,'k'],['spitskool',100,'g'],['mais',50,'g'],['griekse',40,'v']],25),
+ d8:D('Linzendahl met rijst',['vega'],[['linzen',200,'e'],['rijst',70,'k'],['passata',100,'g'],['spinazie',100,'g'],['ui',50,'g'],['kokosmelk',75,'v']],30),
+ d9:D('Roerbak tofu met broccoli en rijst',['vega','snel'],[['tofu',150,'e'],['rijst',75,'k'],['broccoli',150,'g'],['paprika',100,'g'],['olie',10,'v']],25),
+ d10:D('Frittata met aardappel en champignons',['vega','oven'],[['ei',180,'e'],['aardappel',200,'k'],['spinazie',100,'g'],['champignon',100,'g'],['geraspt',15,'v']],35),
+ d13:D('Shakshuka met volkorenbrood',['vega','snel'],[['ei',180,'e'],['brood',105,'k'],['passata',200,'g'],['paprika',100,'g'],['ui',50,'g'],['feta',20,'v']],25),
+ d43:D('Halloumi-traybake met couscous',['vega','oven'],[['halloumi',70,'e'],['kikkererwt',80,'e'],['couscous',70,'k'],['paprika',100,'g'],['courgette',100,'g'],['ui',50,'g']],35),
+ d44:D('Falafelbowl met bulgur en hummus',['vega'],[['falafel',120,'e'],['griekse',60,'e'],['bulgur',65,'k'],['komkommer',100,'g'],['tomaat',100,'g'],['hummus',30,'v']],25),
+ d45:D('Vegetarische chili met zwarte bonen',['vega'],[['zwartebonen',150,'e'],['kidney',80,'e'],['rijst',70,'k'],['paprika',150,'g'],['passata',150,'g'],['mais',50,'g']],35),
+ d46:D('Tempeh in kokossaus met rijst en sperziebonen',['vega'],[['tempeh',150,'e'],['rijst',70,'k'],['sperzie',150,'g'],['ui',50,'g'],['kokosmelk',60,'v']],30),
+ d47:D('Gnocchi met spinazie, tomaat en mozzarella',['vega','snel','kids'],[['mozzarella',100,'e'],['gnocchi',250,'k'],['spinazie',150,'g'],['cherrytomaat',100,'g']],20),
+ d48:D('Pasta met witte bonen, tomaat en feta',['vega','pasta','snel'],[['wittebonen',150,'e'],['pasta',80,'k'],['cherrytomaat',100,'g'],['spinazie',100,'g'],['feta',30,'v']],20),
+ d49:D('Quinoabowl met ei, kikkererwten en avocado',['vega','snel'],[['ei',120,'e'],['kikkererwt',60,'e'],['quinoa',70,'k'],['komkommer',100,'g'],['cherrytomaat',100,'g'],['avocado',50,'v']],25),
+ d50:D('Bloemkoolcurry met kikkererwten',['vega'],[['kikkererwt',150,'e'],['rijst',70,'k'],['bloemkool',200,'g'],['spinazie',80,'g'],['kokosmelk',60,'v']],35),
+ d51:D('Pompoensoep met kikkererwten en brood',['vega'],[['kikkererwt',120,'e'],['griekse',50,'e'],['brood',105,'k'],['pompoen',250,'g'],['ui',50,'g']],40),
+ d52:D('Aubergine-ovenschotel met linzen',['vega','oven'],[['linzen',150,'e'],['mozzarella',50,'e'],['aardappel',200,'k'],['aubergine',200,'g'],['passata',150,'g']],50),
+ d53:D('Nasi met ei en groente',['vega','snel','kids'],[['ei',120,'e'],['rijst',75,'k'],['prei',100,'g'],['wortel',80,'g'],['tauge',80,'g'],['sojasaus',10,'v']],25),
+ d54:D('Havermoutpannenkoeken met kwark en fruit',['vega','kids'],[['ei',120,'e'],['kwark',150,'e'],['havermout',70,'k'],['melk',150,'v'],['bessen',100,'g'],['banaan',120,'g']],30),
+ d57:D('Wrap-pizza margherita met groente',['vega','snel','kids'],[['mozzarella',100,'e'],['wrap',120,'k'],['passata',60,'g'],['champignon',60,'g'],['paprika',60,'g'],['spinazie',50,'g']],20),
+ d58:D('Tofu-noedelsoep met paksoi',['vega','snel'],[['tofu',150,'e'],['mie',70,'k'],['paksoi',150,'g'],['champignon',100,'g'],['sojasaus',10,'v']],20),
+};
+/* ================= ONTBIJT EN LUNCH (basisportie volwassene ± 500–600 kcal; geschaald per persoon) ================= */
+const O=(n,i,t)=>({n,i,t:t||[]});
+const ONTBIJT={
+ o0:O('Vast ontbijt uit je profiel',null,['vast']),
+ o1:O('Skyr met havermout, noten en sinaasappel',[['skyr',300],['havermout',45],['noten',18],['sinaasappel',150]],['snel']),
+ o2:O('Kwark met muesli en rood fruit',[['kwark',300],['muesli',50],['bessen',100]],['snel']),
+ o3:O('Omelet van 3 eieren met volkorenbrood',[['ei',180],['brood',70],['spinazie',50],['cherrytomaat',80]],['warm']),
+ o4:O('Overnight oats met skyr en banaan',[['havermout',60],['skyr',200],['melk',100],['banaan',120]],['voorbereiden']),
+ o5:O('Griekse yoghurt met noten, honing en kiwi',[['griekse',300],['noten',20],['honing',10],['kiwi',150]],['snel']),
+ o6:O('Volkorenbrood met hüttenkäse en gerookte zalm',[['brood',105],['huttenkase',100],['zalmgerookt',50],['komkommer',50]],['hartig']),
+ o7:O('Roerei met spinazie op roggebrood',[['ei',180],['roggebrood',80],['spinazie',80]],['warm']),
+ o8:O('Havermoutpap met kwark en appel',[['havermout',60],['melk',250],['kwark',150],['appel',150]],['warm']),
+ o9:O('Kwark-smoothie met banaan, havermout en bessen',[['kwark',250],['banaan',120],['havermout',30],['bessen',100],['melk',150]],['snel']),
+ o10:O('Boterhammen met pindakaas, banaan en melk',[['brood',105],['pindakaas',20],['banaan',120],['melk',250]],['sportdag']),
+ o11:O('Crackers met ei en hüttenkäse',[['crackers',40],['ei',120],['huttenkase',100],['cherrytomaat',80]],['hartig']),
+ o12:O('Skyr-bowl met muesli en kiwi',[['skyr',300],['muesli',40],['kiwi',150]],['snel']),
+};
+const LUNCH={
+ l0:O('Vaste lunch uit je profiel',null,['vast']),
+ l1:O('Volkorenbrood met kip, hüttenkäse, ei en rauwkost',[['brood',105],['kipbeleg',60],['huttenkase',100],['ei',60],['komkommer',100],['cherrytomaat',80],['appel',150]],['brood']),
+ l2:O('Wrap met tonijn, maïs en sla',[['wrap',120],['tonijn',120],['mais',50],['sla',50],['griekse',40]],['wrap']),
+ l3:O('Salade met kip, quinoa en feta',[['quinoa',50],['kipfilet',120],['sla',80],['komkommer',100],['cherrytomaat',100],['feta',30]],['salade']),
+ l4:O('Roggebrood met eiersalade en komkommer',[['roggebrood',120],['ei',120],['griekse',40],['komkommer',100]],['brood']),
+ l5:O('Volkorenbrood met hummus, kip en paprika',[['brood',105],['hummus',30],['kipbeleg',80],['paprika',100],['appel',150]],['brood']),
+ l6:O('Tomaten-linzensoep met brood en kaas',[['linzen',150],['passata',200],['brood',70],['kaas',20]],['warm']),
+ l7:O('Couscoussalade met kikkererwten en feta',[['couscous',60],['kikkererwt',120],['feta',30],['komkommer',100],['paprika',100]],['salade']),
+ l8:O('Volkoren tosti kip-kaas met rauwkost',[['brood',105],['kaas',30],['kipbeleg',60],['komkommer',100],['cherrytomaat',80]],['warm']),
+ l9:O('Rijstbowl met gerookte zalm, ei en avocado',[['rijst',60],['zalmgerookt',80],['ei',60],['komkommer',100],['avocado',40],['sojasaus',5]],['salade']),
+ l10:O('Crackers met hüttenkäse, zalm en appel',[['crackers',40],['huttenkase',150],['zalmgerookt',50],['appel',150]],['snel']),
+ l11:O('Pita met falafel en yoghurtsaus',[['pita',140],['falafel',100],['griekse',60],['sla',50],['tomaat',100]],['warm']),
+ l12:O('Kwark met muesli en appel',[['kwark',300],['muesli',50],['appel',150]],['snel']),
+};
+const SNACK={
+ rust:{n:'Tussendoor',i:[['appel',150],['noten',15]]},
+ krachtA:{n:'Tussendoor (± 16:00)',i:[['banaan',120],['rijstwafel',16],['pindakaas',15]]},
+ krachtB:{n:'Tussendoor (± 16:00)',i:[['banaan',120],['rijstwafel',16],['pindakaas',15]]},
+ cardio:{n:'Tussendoor',i:[['banaan',120],['rijstwafel',16],['pindakaas',15]]},
+ sport:{n:'Tussendoor',i:[['banaan',120],['rijstwafel',16],['pindakaas',15]]},
+ voorbereiding:{n:'Tussendoor',i:[['banaan',120],['brood',70],['honing',15]]},
+ voetbal:{n:'Voor de wedstrijd (± 3 uur ervoor)',i:[['banaan',120],['brood',70],['honing',20]]},
+};
+const KIND_BASIS=[['brood',140],['halvarine',10],['kaas',20],['melk',300],['appel',150]];
+
+const ROUTINE={
+ ma:{t:'Rustig losmaken',i:[['armswings','20 herhalingen'],['heupcirkels','10 per richting'],['romprotaties','10 per kant'],['squatreach','8, alleen als de enkel dit verdraagt'],['marcheren-knie','20 knieheffingen totaal']]},
+ di:{t:'Heupen en romp',i:[['hip9090','8 per kant'],['cossack','6 per kant, ondiep en pijnvrij'],['downupdog','6 herhalingen'],['kneetaps','10 per kant']]},
+ wo:{t:'Schouders en rug',i:[['golfarm','12 per kant'],['reversefly-bw','12 herhalingen'],['ragdoll','6 rustige overgangen'],['heupcirkels','10 per richting']]},
+ do:{t:'Activeren',i:[['marcheren-knie','20 knieheffingen totaal'],['squatreach','8, pijnvrij'],['romprotaties','10 per kant'],['downupdog','6 herhalingen']]},
+ vr:{t:'Lichte flow',i:[['marcheren','30 stappen'],['armswings','20 herhalingen'],['heupcirkels','10 per richting'],['kneetaps','10 per kant']]},
+ za:{t:'Soepel bewegen',i:[['bodywaves','8 herhalingen'],['hip9090','8 per kant'],['ragdoll','6 rustige overgangen'],['golfarm','10 per kant']]},
+ zo:{t:'Voorbereiding op voetbal',i:[['marcheren','30 stappen'],['heupcirkels','10 per richting'],['armswings','20 herhalingen'],['squatreach','8 (of 8 hip hinges als de enkel dit niet prettig vindt)'],['romprotaties','8 per kant']]},
+};
+/* Uitleg per beweging: n = naam, s = stappen, l = let op. De animatie staat in media/<sleutel>.mp4 */
+const MOVES={
+ 'armswings':{n:'Arm swings',s:['Sta op heupbreedte, knieën licht gebogen.','Zwaai beide armen ontspannen naar voren en omhoog, dan naar achteren.','Wissel af met kruislings zwaaien voor de borst langs.'],l:'Laat de beweging uit de schouders komen; geen kracht zetten.'},
+ 'heupcirkels':{n:'Heupcirkels',s:['Handen op de heupen, voeten iets breder dan heupbreedte.','Maak grote, rustige cirkels met je bekken.','Na de helft van de herhalingen de andere kant op.'],l:'Hoofd en schouders blijven zo stil mogelijk.'},
+ 'romprotaties':{n:'Romprotaties',s:['Sta stevig, knieën licht gebogen, armen los.','Draai je bovenlichaam naar links en rechts; armen zwaaien mee.','Laat je blik meedraaien.'],l:'Voeten blijven plat staan, zeker met de enkel: draai niet op je voet.'},
+ 'squatreach':{n:'Squat met reach',s:['Voeten op schouderbreedte, tenen licht naar buiten.','Zak rustig naar een comfortabele diepte, borst omhoog.','Kom omhoog en reik met beide armen hoog boven je hoofd.'],l:'Alleen zo diep als de enkel pijnvrij toelaat; een ondiepe squat is prima.'},
+ 'marcheren-knie':{n:'Marcheren met kniehef',s:['Sta rechtop, buik licht aangespannen.','Til afwisselend een knie op tot heuphoogte.','Armen bewegen tegengesteld mee.'],l:'Rustig tempo, rechte rug.'},
+ 'marcheren':{n:'Marcheren',s:['Loop op de plaats in een rustig tempo.','Armen bewegen ontspannen mee.','Bouw het tempo licht op.'],l:'Landen op de hele voet, zacht.'},
+ 'hip9090':{n:'90/90 hip switches',s:['Zit op de grond met beide knieën in een hoek van 90 graden, naar één kant.','Draai beide knieën tegelijk naar de andere kant.','Gebruik je handen achter je als steun als dat nodig is.'],l:'Rechtop blijven zitten; beweging komt uit de heupen.'},
+ 'cossack':{n:'Cossack shifts',s:['Ga in een wijde stand staan, tenen licht naar buiten.','Verplaats je gewicht naar één been en buig die knie; het andere been blijft gestrekt.','Schuif rustig door naar de andere kant.'],l:'Ondiep en pijnvrij; de hiel van het gebogen been blijft op de grond.'},
+ 'downupdog':{n:'Down-up dog',s:['Start in opdrukpositie.','Duw je heupen omhoog naar een omgekeerde V (down dog).','Laat je heupen zakken en open je borst naar voren (up dog).'],l:'Adem uit bij down dog, in bij up dog; onderrug niet forceren.'},
+ 'kneetaps':{n:'Knee taps',s:['Sta rechtop.','Til een knie op en tik hem aan met de tegenovergestelde hand.','Wissel in een rustig tempo.'],l:'Romp blijft lang; niet voorover buigen naar de knie.'},
+ 'golfarm':{n:'Golf-armzwaaien',s:['Handen samen voor je, armen ontspannen.','Zwaai als een golfswing van de ene naar de andere kant.','Heupen en schouders draaien mee.'],l:'Voeten plat; draai niet op de enkel.'},
+ 'reversefly-bw':{n:'Reverse flies zonder gewicht',s:['Buig licht voorover vanuit de heupen, rug recht.','Open je armen zijwaarts tot schouderhoogte.','Knijp kort je schouderbladen samen en zak rustig terug.'],l:'Nek lang houden, kijk naar de grond.'},
+ 'ragdoll':{n:'Ragdoll',s:['Knieën ruim gebogen, laat je bovenlichaam rustig voorover hangen.','Armen en hoofd hangen los; wieg licht heen en weer.','Rol wervel voor wervel weer op.'],l:'Rustig opkomen, zeker vlak na het opstaan.'},
+ 'bodywaves':{n:'Body waves',s:['Sta ontspannen, knieën zacht.','Maak een golf van borst naar buik naar heupen.','Begin klein en maak de golf langzaam groter.'],l:'Geen kracht, het gaat om soepelheid.'},
+ 'hiphinge':{n:'Hip hinge',s:['Handen op de heupen, knieën licht gebogen.','Duw je heupen naar achteren met een rechte rug.','Kom terug door je billen aan te spannen.'],l:'Alternatief voor de squat als de enkel geen diepe buiging wil.'},
+ 'barbell-squat':{n:'Barbell squat',s:['Stang op de bovenrug, voeten op schouderbreedte.','Adem in, zet je romp vast en zak met de heupen naar achter en beneden.','Duw je door de hele voet omhoog.'],l:'Pijnvrije diepte; knieën in lijn met je tenen.'},
+ 'goblet-squat':{n:'Goblet squat (kettlebell)',s:['Houd de kettlebell met twee handen tegen je borst.','Zak tussen je knieën door naar een comfortabele diepte.','Duw je omhoog en blijf rechtop.'],l:'Ellebogen binnen de knieën; ideaal om techniek te leren.'},
+ 'box-squat':{n:'Box squat op bankje',s:['Zet het bankje achter je; stang op de bovenrug.','Zak gecontroleerd tot je het bankje licht raakt.','Duw je direct weer omhoog zonder te ploffen.'],l:'Het bankje bepaalt een vaste, enkelvriendelijke diepte.'},
+ 'db-bench-press':{n:'Dumbbell bench press',s:['Lig op de bank, voeten plat, schouderbladen naar achter en beneden.','Laat de dumbbells gecontroleerd zakken naast je borst.','Duw ze omhoog tot boven je borst.'],l:'Ellebogen op ongeveer 45 graden van je romp.'},
+ 'barbell-bench-press':{n:'Barbell bench press',s:['Lig met je ogen onder de stang, handen iets breder dan schouders.','Laat de stang rustig zakken naar je onderborst.','Duw hem in een lichte boog terug boven je schouders.'],l:'Train zwaar alleen met een veilige opstelling of zonder tot falen te gaan.'},
+ 'db-floor-press':{n:'Dumbbell floor press',s:['Lig op de grond met gebogen knieën.','Laat de dumbbells zakken tot je bovenarmen de grond raken.','Pauzeer kort en duw ze omhoog.'],l:'Schoudervriendelijk door de kortere beweging.'},
+ 'barbell-row':{n:'Barbell row',s:['Pak de stang, buig vanuit de heupen tot je romp ongeveer 45 graden staat.','Trek de stang naar je onderribben.','Laat hem gecontroleerd zakken.'],l:'Rug neutraal; niet omhoog zwaaien met je romp.'},
+ 'db-row':{n:'Eenarmige dumbbell row',s:['Steun met knie en hand op de bank.','Trek de dumbbell naar je heup.','Laat hem langzaam zakken tot je arm gestrekt is.'],l:'Schouders recht houden; niet draaien.'},
+ 'trx-row':{n:'TRX row',s:['Houd de handvatten vast en leun achterover met gestrekte armen.','Trek je borst naar de handvatten; lichaam blijft een plank.','Zak gecontroleerd terug.'],l:'Lichter: ga rechterop staan. Zwaarder: voeten verder naar voren.'},
+ 'kb-rdl':{n:'Kettlebell Romanian deadlift',s:['Sta met de kettlebell in beide handen voor je.','Duw je heupen naar achter, knieën licht gebogen, kettlebell dicht langs je benen.','Kom omhoog door je billen aan te spannen.'],l:'Voel rek achter in je benen; rug blijft recht.'},
+ 'db-rdl':{n:'Dumbbell Romanian deadlift',s:['Dumbbells voor je dijen.','Heupen naar achter, dumbbells glijden langs je benen omlaag.','Kom omhoog door je heupen naar voren te duwen.'],l:'Stop zodra je rug wil krommen.'},
+ 'barbell-rdl':{n:'Barbell Romanian deadlift',s:['Stang op heuphoogte, handen op schouderbreedte.','Heupen naar achter, stang dicht langs je benen tot net onder de knie.','Kom omhoog en span je billen aan.'],l:'Rug neutraal, knieën licht gebogen en stil.'},
+ 'hip-thrust':{n:'Barbell hip thrust',s:['Bovenrug tegen de bank, stang over je heupen (met kussen).','Duw je heupen omhoog tot je lichaam van knie tot schouder recht is.','Laat rustig zakken.'],l:'Kin licht naar de borst; niet hol trekken bovenin.'},
+ 'db-reverse-lunge':{n:'Dumbbell reverse lunge',s:['Dumbbells naast je lichaam.','Stap naar achter en zak tot beide knieën ongeveer 90 graden zijn.','Duw je terug via de voorste hiel.'],l:'Alleen pijnvrij voor de enkel; kleinere stap en diepte mag.'},
+ 'glute-bridge':{n:'Glute bridge op bank',s:['Lig op je rug, voeten op de bank.','Duw je heupen omhoog tot je lichaam recht is.','Laat rustig zakken.'],l:'Enkelvriendelijk alternatief voor lunges; dumbbell op je heupen maakt het zwaarder.'},
+ 'db-shoulder-press':{n:'Dumbbell shoulder press',s:['Zit of sta met dumbbells op schouderhoogte.','Duw ze omhoog tot je armen bijna gestrekt zijn.','Laat ze gecontroleerd zakken.'],l:'Buik aangespannen; niet hol trekken.'},
+ 'kb-press':{n:'Halfgeknielde kettlebell press',s:['Zit op één knie; kettlebell aan de kant van de geknielde knie op schouderhoogte.','Duw de kettlebell recht omhoog.','Laat hem rustig zakken.'],l:'Billen aanspannen houdt je romp stabiel.'},
+ 'barbell-ohp':{n:'Barbell overhead press',s:['Stang op je voorste schouders, handen net buiten schouderbreedte.','Duw de stang omhoog; hoofd beweegt even naar achter.','Eindig met de stang boven je middenvoet.'],l:'Billen en buik aan; niet achterover leunen.'},
+ 'suitcase-carry':{n:'Suitcase carry',s:['Pak één zware dumbbell aan één kant.','Loop rustig rechtop, zonder naar die kant te hellen.','Wissel van hand na de afgesproken stappen.'],l:'Bij enkelklachten: kies de staande variant.'},
+ 'suitcase-hold':{n:'Suitcase hold staand',s:['Pak één zware dumbbell aan één kant.','Sta 20–30 seconden rechtop zonder te hellen.','Wissel van kant.'],l:'Schouders blijven horizontaal.'},
+ 'db-reverse-fly':{n:'Dumbbell reverse fly',s:['Buig voorover vanuit de heupen met lichte dumbbells.','Open je armen zijwaarts tot schouderhoogte.','Laat langzaam zakken.'],l:'Licht gewicht; niet zwaaien.'},
+ 'trx-face-pull':{n:'TRX face pull / high row',s:['Handvatten op borsthoogte, leun achterover.','Trek de handvatten naar je gezicht, ellebogen hoog en breed.','Strek gecontroleerd terug.'],l:'Schouders laag houden.'},
+ 'trx-y-raise':{n:'TRX Y-raise',s:['Leun achterover met gestrekte armen.','Trek je armen in een Y-vorm boven je hoofd.','Zak langzaam terug.'],l:'Lichte hoek; de beweging komt uit je schouderbladen.'},
+ 'dead-bug':{n:'Dead bug',s:['Lig op je rug, armen omhoog, knieën in 90 graden.','Strek tegengestelde arm en been langzaam uit.','Terug en wissel van kant.'],l:'Onderrug blijft op de grond.'},
+ 'side-plank':{n:'Side plank',s:['Steun op je onderarm en de zijkant van je voet (of knie).','Til je heupen op tot een rechte lijn.','Houd vast en wissel van kant.'],l:'Op de knie is lichter en enkelvriendelijker.'},
+};
+const SESSIONS={
+ A:{n:'Kracht A',focus:'Squat, duwen, trekken, romp',warm:'5 minuten rustig bewegen; enkele lichte herhalingen van de eerste oefeningen.',
+  tip:'Tijdsbesparing: doe bench press en row als superset, en face pull met dead bug. Neem bij squat en Romanian deadlift voldoende rust.',
+  ex:[
+   {id:'squat',sets:3,min:6,max:10,rust:'90 sec',note:'Pijnvrije diepte, romp stevig, voeten stabiel.',v:[{n:'Barbell squat',t:'stang',s:'barbell-squat'},{n:'Goblet squat (kettlebell)',t:'kb',s:'goblet-squat'},{n:'Box squat op bankje',t:'stang',s:'box-squat'}]},
+   {id:'bench',sets:3,min:8,max:12,rust:'60–90 sec',note:'Schouderbladen stabiel; gecontroleerd laten zakken.',v:[{n:'Dumbbell bench press',t:'db',s:'db-bench-press'},{n:'Barbell bench press',t:'stang',s:'barbell-bench-press'},{n:'Dumbbell floor press',t:'db',s:'db-floor-press'}]},
+   {id:'row',sets:3,min:8,max:12,rust:'60–90 sec',note:'Rug neutraal; trek richting onderribben.',v:[{n:'Barbell row',t:'stang',s:'barbell-row'},{n:'Eenarmige dumbbell row',t:'db',s:'db-row'},{n:'TRX row',t:'trx',s:'trx-row'}]},
+   {id:'kbrdl',sets:2,min:10,max:12,rust:'60 sec',note:'Heupen naar achteren; lichte kniebuiging; geen pijn forceren.',v:[{n:'Kettlebell Romanian deadlift',t:'kb',s:'kb-rdl'},{n:'Dumbbell Romanian deadlift',t:'db',s:'db-rdl'}]},
+   {id:'facepull',sets:2,min:12,max:15,rust:'45–60 sec',note:'Trek richting gezicht/bovenborst; schouders laag.',v:[{n:'TRX face pull / high row',t:'trx',s:'trx-face-pull'},{n:'Dumbbell reverse fly',t:'db',s:'db-reverse-fly'}]},
+   {id:'deadbug',sets:2,min:8,max:10,rust:'30 sec',note:'Onderrug rustig houden; langzaam uitstrekken. Herhalingen per kant.',v:[{n:'Dead bug',t:'bw',s:'dead-bug'},{n:'Side plank (seconden)',t:'bw',s:'side-plank'}]},
+  ]},
+ B:{n:'Kracht B',focus:'Heupscharnier, trekken, schouders, romp',warm:'5 minuten rustig bewegen; heupscharnier en lichte trekbewegingen oefenen.',
+  tip:'Zondag is voetbal: houd de belasting van de benen beheersbaar. Loopt de sessie uit, laat dan eerst één accessoire-oefening weg.',
+  ex:[
+   {id:'rdl',sets:3,min:6,max:10,rust:'90 sec',note:'Heupen naar achter; halter dicht langs de benen; rug neutraal.',v:[{n:'Barbell Romanian deadlift',t:'stang',s:'barbell-rdl'},{n:'Dumbbell Romanian deadlift',t:'db',s:'db-rdl'},{n:'Barbell hip thrust',t:'stang',s:'hip-thrust'}]},
+   {id:'lunge',sets:2,min:8,max:8,rust:'60–90 sec',note:'Alleen als de enkel pijnvrij is; stap en diepte comfortabel. Herhalingen per been.',v:[{n:'Dumbbell reverse lunge',t:'db',s:'db-reverse-lunge'},{n:'Glute bridge op bank (enkelvriendelijk)',t:'db',s:'glute-bridge'}]},
+   {id:'trxrow',sets:3,min:8,max:15,rust:'60 sec',note:'Lichaam als een plank; lichter door rechterop te staan.',v:[{n:'TRX row',t:'trx',s:'trx-row'},{n:'Eenarmige dumbbell row',t:'db',s:'db-row'}]},
+   {id:'ohp',sets:3,min:8,max:12,rust:'60–90 sec',note:'Romp aangespannen; niet overdreven hol trekken.',v:[{n:'Dumbbell shoulder press',t:'db',s:'db-shoulder-press'},{n:'Halfgeknielde kettlebell press',t:'kb',s:'kb-press'},{n:'Barbell overhead press',t:'stang',s:'barbell-ohp'}]},
+   {id:'suitcase',sets:2,min:10,max:15,rust:'45 sec',note:'Eén dumbbell; loop rustig en blijf rechtop. Stappen per kant.',v:[{n:'Suitcase carry',t:'db',s:'suitcase-carry'},{n:'Suitcase hold staand, 20–30 sec',t:'db',s:'suitcase-hold'}]},
+   {id:'revfly',sets:2,min:12,max:15,rust:'45–60 sec',note:'Lichte gewichten; vanuit de schouders, niet zwaaien.',v:[{n:'Dumbbell reverse fly',t:'db',s:'db-reverse-fly'},{n:'TRX Y-raise',t:'trx',s:'trx-y-raise'}]},
+  ]},
+};
+const STEP={stang:2.5,db:1,kb:4};
+const INC={stang:'Alle sets op de bovenkant: volgende keer +2,5 kg op de stang.',db:'Alle sets op de bovenkant: volgende keer de volgende dumbbell (+1 à 2 kg per hand).',kb:'Alle sets op de bovenkant: KB is 20 kg, dus maak het zwaarder met 3 tellen zakken of een extra herhaling.',trx:'Alle sets op de bovenkant: zet je voeten verder naar voren voor een schuinere hoek.',bw:'Alle sets op de bovenkant: langzamer tempo of 2 extra herhalingen.'};
+
+const DEFAULT_SETTINGS={
+ personen:{
+  p1:{naam:'Dion',geslacht:'m',leeftijd:37,lengte:180,gewicht:84,pal:1.4,tekort:250,eiwitPerKg:1.9,vetPerKg:0.9,eMult:1.25,enkel:true,voorbeeld:false,
+      schema:{ma:'rust',di:'krachtA',wo:'rust',do:'krachtB',vr:'cardio',za:'voorbereiding',zo:'voetbal'},
+      ontbijt:[['skyr',300],['havermout',45],['noten',18],['sinaasappel',150]],
+      lunch:[['brood',105],['kipbeleg',60],['huttenkase',100],['ei',60],['komkommer',100],['cherrytomaat',80],['appel',150]],varianten:{}},
+  p2:{naam:'Partner',geslacht:'v',leeftijd:35,lengte:168,gewicht:65,pal:1.4,tekort:200,eiwitPerKg:1.6,vetPerKg:0.9,eMult:1,enkel:false,voorbeeld:true,
+      schema:{ma:'krachtA',di:'rust',wo:'cardio',do:'krachtB',vr:'rust',za:'cardio',zo:'rust'},
+      ontbijt:[['skyr',200],['havermout',30],['noten',15],['appel',150]],
+      lunch:[['brood',70],['huttenkase',100],['ei',60],['komkommer',100],['cherrytomaat',80]],varianten:{}},
+ },
+ kinderen:2,kindFactor:0.5,kindBasis:true
+};
+
+/* ================= STATE ================= */
+const S={set:clone(DEFAULT_SETTINGS),menus:{},logs:{},checkins:{},
+ ui:{person:'p1',tab:'dag',week:0,day:(new Date().getDay()+6)%7,sessie:null,sheet:null},draft:{},db:null,mode:'local',saving:0};
+function clone(o){return JSON.parse(JSON.stringify(o))}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(n,d=0)=>Number(n).toLocaleString('nl-NL',{maximumFractionDigits:d,minimumFractionDigits:d});
+
+/* ================= DATUMS ================= */
+function mondayOf(off){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)+off*7);return d}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-dn+3);const fy=t.getUTCFullYear();const f4=new Date(Date.UTC(fy,0,4));const w=1+Math.round(((t-f4)/864e5-3+((f4.getUTCDay()+6)%7))/7);return fy+'-W'+String(w).padStart(2,'0')}
+const dShort=d=>d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+const curMonday=()=>mondayOf(S.ui.week);
+const curWeek=()=>isoWeek(curMonday());
+const dkOf=date=>DAYS[(date.getDay()+6)%7];
+
+/* ================= REKENKERN ================= */
+function macros(items){let k=0,p=0,c=0,f=0;for(const [id,g] of items){const x=ING[id];if(!x)continue;const m=g/100;k+=x[1]*m;p+=x[2]*m;c+=x[3]*m;f+=x[4]*m}return{k,p,c,f}}
+function bmr(p){return 10*p.gewicht+6.25*p.lengte-5*p.leeftijd+(p.geslacht==='v'?-161:5)}
+function targets(p,type){const rest=Math.round((bmr(p)*p.pal-p.tekort)/10)*10;const kcal=rest+(BONUS[type]||0);const prot=Math.round(p.eiwitPerKg*p.gewicht/5)*5;const fat=Math.round(p.vetPerKg*p.gewicht);return{kcal,prot,fat,carb:Math.max(0,Math.round((kcal-prot*4-fat*9)/4))}}
+function roundG(id,g){const x=ING[id];if(x&&x[7]&&COUNT.includes(id))return Math.max(1,Math.round(g/x[7]))*x[7];return Math.max(5,Math.round(g/5)*5)}
+function scaleF(p){return Math.min(1.3,Math.max(0.6,targets(p,'rust').kcal/2250))}
+function poolItems(pool,id,p,tplKey){const o=pool[id];if(!o||!o.i)return p[tplKey];const f=scaleF(p);return o.i.map(([i,g])=>[i,roundG(i,g*f)])}
+function dinnerItems(dish,e,k){return dish.i.map(([id,g,r])=>[id,Math.round(g*(r==='e'?e:r==='k'?k:1))])}
+function seeded(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+function hashStr(t){let h=0;for(const ch of t)h=(h*31+ch.charCodeAt(0))>>>0;return h}
+function genMenu(rand){
+ const ids=Object.keys(DISH);const used=new Set();
+ const pick=(tag,pref)=>{let c=ids.filter(id=>DISH[id].t.includes(tag)&&!used.has(id));if(pref){const c2=c.filter(id=>DISH[id].t.includes(pref));if(c2.length)c=c2}if(!c.length)c=ids.filter(id=>!used.has(id));const x=c[Math.floor(rand()*c.length)];used.add(x);return x};
+ const m={};m.za=pick('pasta');
+ const order=['kip','kip','vis','vega','vega','vlees'];for(let i=order.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[order[i],order[j]]=[order[j],order[i]]}
+ const rest=['ma','di','wo','do','vr','zo'];
+ rest.forEach((dk,i)=>{const busy=['p1','p2'].some(pid=>/kracht/.test((S.set.personen[pid].schema||{})[dk]));m[dk]=pick(order[i],busy?'snel':null)});
+ return m;
+}
+function menuOf(wk){const m=S.menus[wk]||{};return{diner:Object.assign(genMenu(seeded(hashStr(wk))),m.diner||{}),keuze:m.keuze||{},afgevinkt:m.afgevinkt||{},extra:m.extra||{}}}
+function keuze(wk,pid,dk){const k=((menuOf(wk).keuze||{})[pid]||{})[dk]||{};return{o:ONTBIJT[k.o]?k.o:'o0',l:LUNCH[k.l]?k.l:'l0'}}
+function dayPlan(pid,date){
+ const p=S.set.personen[pid];const wk=isoWeek(date);const dk=dkOf(date);const type=p.schema[dk]||'rust';const t=targets(p,type);
+ const dishId=menuOf(wk).diner[dk];const dish=DISH[dishId]||DISH.d1;const snack=SNACK[type]||SNACK.rust;const kz=keuze(wk,pid,dk);
+ const ontbijt=poolItems(ONTBIJT,kz.o,p,'ontbijt'),lunch=poolItems(LUNCH,kz.l,p,'lunch');
+ const fixed=[...ontbijt,...lunch,...snack.i];const e=p.eMult||1;
+ const carbK=Math.max(1,macros(dish.i.filter(x=>x[2]==='k').map(([id,g])=>[id,g])).k);
+ let k=1,kw=0;
+ for(let it=0;it<4;it++){
+  const m=macros([...fixed,...dinnerItems(dish,e,k),['kwark',kw]]);const gap=t.prot-m.p;
+  if(gap>8||gap<-15)kw=Math.min(500,Math.max(0,kw+Math.round(gap/0.09/50)*50));
+  const m2=macros([...fixed,...dinnerItems(dish,e,1),['kwark',kw]]);
+  k=Math.min(1.8,Math.max(0.5,Math.round((1+(t.kcal-m2.k)/carbK)*20)/20));
+ }
+ const din=dinnerItems(dish,e,k);
+ const restGap=t.kcal-macros([...fixed,...din,['kwark',kw]]).k;
+ const extra=restGap>120?Math.min(4,Math.round(restGap/175)):0;
+ const meals=[
+  {key:'ontbijt',lbl:'Ontbijt · 09:00–10:00',n:kz.o==='o0'?'Vast ontbijt':ONTBIJT[kz.o].n,i:ontbijt,pick:'ontbijt'},
+  {key:'lunch',lbl:'Lunch',n:kz.l==='l0'?'Vaste lunch':LUNCH[kz.l].n,i:lunch,pick:'lunch'},
+  {key:'snack',lbl:snack.n,n:'Tussendoortje',i:snack.i},
+ ];
+ if(extra>0)meals.push({key:'extra',lbl:'Aanvulling',n:`${extra} ${extra===1?'boterham':'boterhammen'} met pindakaas`,i:[['brood',35*extra],['pindakaas',15*extra]]});
+ meals.push({key:'diner',lbl:'Gezinsdiner · ± 18:00',n:dish.n,i:din,mult:{e,k},pick:'diner'});
+ if(kw>0)meals.push({key:'avond',lbl:(type==='krachtA'||type==='krachtB')?'Na de training · ± 20:45':'Avond',n:'Magere kwark',i:[['kwark',kw]]});
+ return{p,type,t,meals,tot:macros(meals.flatMap(m=>m.i)),dish,dishId,wk,dk,kz};
+}
+function kidsDay(date){const wk=isoWeek(date);const dish=DISH[menuOf(wk).diner[dkOf(date)]]||DISH.d1;const n=S.set.kinderen||0;const f=S.set.kindFactor||0.5;const it=[];if(n>0){for(const [id,g] of dish.i)it.push([id,g*f*n]);if(S.set.kindBasis)for(const [id,g] of KIND_BASIS)it.push([id,g*n])}return it}
+function shoppingFor(dates){const tot={};const add=(id,g)=>{tot[id]=(tot[id]||0)+g};for(const d of dates){for(const pid of ['p1','p2'])dayPlan(pid,d).meals.forEach(m=>m.i.forEach(([id,g])=>add(id,g)));kidsDay(d).forEach(([id,g])=>add(id,g))}return tot}
+function qtyLabel(id,g){const x=ING[id];const unit=x[8]||'g';const st=x[7];
+ if(st){const n=Math.max(1,Math.ceil(g/st-0.15));
+  if(id==='brood'||id==='roggebrood'){const br=Math.ceil(g/x[6]);return `${n} sneetjes · ${br} ${br===1?'pak':'pakken'}`}
+  if(id==='ei')return `${n} eieren`;
+  if(['wrap','rijstwafel','crackers','pita'].includes(id)){const pk=Math.ceil(g/x[6]);return `${n} stuks · ${pk} ${pk===1?'pak':'pakken'}`}
+  return `${n} ${n===1?'stuk':'stuks'}`}
+ const pk=Math.max(1,Math.ceil(g/x[6]-0.05));const need=g>=1000?fmt(g/1000,1)+(unit==='ml'?' l':' kg'):Math.round(g)+' '+unit;
+ const pt=x[6]>=1000?fmt(x[6]/1000,1)+(unit==='ml'?' l':' kg'):x[6]+' '+unit;return `${pk} × ${pt} · nodig ${need}`}
+
+/* ================= OPSLAG (Supabase + lokale cache) ================= */
+const CFG=window.GEZINSPLAN_CONFIG||{};
+const CONFIGURED=!!(CFG.supabaseUrl&&CFG.supabaseKey&&!/JOUW|xxxx/i.test(CFG.supabaseUrl+CFG.supabaseKey)&&window.supabase);
+const LS_KEY='gezinsplan-v2',LS_PENDING='gezinsplan-pending';
+function lsLoad(){try{const raw=localStorage.getItem(LS_KEY);if(raw){const o=JSON.parse(raw);if(o.set)S.set=mergeSettings(o.set);S.menus=o.menus||{};S.logs=o.logs||{};S.checkins=o.checkins||{}}}catch(e){}}
+function lsSave(){try{localStorage.setItem(LS_KEY,JSON.stringify({set:S.set,menus:S.menus,logs:S.logs,checkins:S.checkins}))}catch(e){}}
+function pendingGet(){try{return JSON.parse(localStorage.getItem(LS_PENDING)||'{}')}catch(e){return{}}}
+function pendingSet(p){try{localStorage.setItem(LS_PENDING,JSON.stringify(p))}catch(e){}}
+function mergeSettings(o){const r=Object.assign(clone(DEFAULT_SETTINGS),o||{});r.personen=Object.assign(clone(DEFAULT_SETTINGS.personen),(o&&o.personen)||{});for(const k of ['p1','p2'])r.personen[k]=Object.assign(clone(DEFAULT_SETTINGS.personen[k]),r.personen[k]);return r}
+function applyDoc(path,data){
+ if(path==='gezin/instellingen'){S.set=mergeSettings(data);return}
+ const [col,id]=path.split('/');if(!id)return;
+ if(col==='menu')S.menus[id]=data;else if(col==='training')S.logs[id]=data;else if(col==='checkin')S.checkins[id]=data;
+}
+const queues={},timers={};
+function writeDoc(path,data){
+ lsSave();
+ if(S.mode!=='db'){setSave('ok',CONFIGURED?'Niet ingelogd · op dit apparaat':'Opgeslagen op dit apparaat');return Promise.resolve()}
+ const pend=pendingGet();pend[path]=data;pendingSet(pend);
+ S.saving++;setSave('busy','Opslaan…');
+ const p=(queues[path]||Promise.resolve()).then(()=>S.sb.from('docs').upsert({path,data,updated_at:new Date().toISOString(),updated_by:S.email||null})).then(({error})=>{
+  S.saving--;if(error)throw error;const pd=pendingGet();if(pd[path]===undefined||JSON.stringify(pd[path])===JSON.stringify(data)){delete pd[path];pendingSet(pd)}
+  if(!S.saving)setSave('ok','Opgeslagen · gedeeld met het gezin')}).catch(e=>{S.saving=Math.max(0,S.saving);setSave('err',navigator.onLine?'Opslaan mislukt; ik probeer het later opnieuw':'Offline · wordt opgeslagen zodra je weer online bent')});
+ queues[path]=p;return p;
+}
+async function flushPending(){if(S.mode!=='db')return;const pend=pendingGet();for(const [path,data] of Object.entries(pend))await writeDoc(path,data)}
+function debounce(key,fn,ms=700){clearTimeout(timers[key]);timers[key]=setTimeout(fn,ms)}
+function saveSettings(){debounce('set',()=>writeDoc('gezin/instellingen',clone(S.set)))}
+function setMenu(wk,mut){const m=menuOf(wk);mut(m);S.menus[wk]=m;debounce('menu'+wk,()=>writeDoc('menu/'+wk,clone(S.menus[wk])),400)}
+function saveCheckin(id){debounce('ci'+id,()=>writeDoc('checkin/'+id,clone(S.checkins[id])),800)}
+function setSave(cls,txt){const el=document.getElementById('savestate');if(el){el.textContent=txt;el.className=cls==='err'?'status err':cls==='ok'?'status ok':'status'}}
+async function loadRemote(){
+ const {data,error}=await S.sb.from('docs').select('path,data');
+ if(error){setSave('err',error.code==='42501'||/permission|policy/i.test(error.message)?'Dit account staat niet op de gezinslijst':'Laden mislukt; je ziet de laatst bewaarde versie');return}
+ const pend=pendingGet();
+ S.menus={};S.logs={};S.checkins={};
+ for(const r of data)applyDoc(r.path,r.data);
+ for(const [p,d] of Object.entries(pend))applyDoc(p,d);
+ lsSave();setSave('ok','Gedeeld met het gezin');render();flushPending();
+}
+async function connect(){
+ lsLoad();
+ if(!CONFIGURED){S.mode='local';render();setSave('ok','Testmodus · opslag op dit apparaat');return}
+ S.sb=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true}});
+ const {data:{session}}=await S.sb.auth.getSession();
+ S.sb.auth.onAuthStateChange((ev,ses)=>{if(ev==='SIGNED_OUT'){S.mode='login';S.email=null;render()}});
+ if(!session){S.mode='login';render();return}
+ startSession(session);
+}
+function startSession(session){
+ S.mode='db';S.email=session.user.email;
+ const me=(CFG.leden||[]).find(l=>l.email&&l.email.toLowerCase()===S.email.toLowerCase());if(me&&me.persoon)S.ui.person=me.persoon;
+ render();setSave('busy','Laden…');loadRemote();
+ if(S.channel)S.sb.removeChannel(S.channel);
+ S.channel=S.sb.channel('docs-live').on('postgres_changes',{event:'*',schema:'public',table:'docs'},pl=>{const r=pl.new;if(!r||!r.path)return;if(pendingGet()[r.path]!==undefined)return;applyDoc(r.path,r.data);lsSave();render()}).subscribe();
+}
+async function login(email,pw){
+ const el=document.getElementById('loginmsg');if(el)el.textContent='Bezig met inloggen…';
+ const {data,error}=await S.sb.auth.signInWithPassword({email:email.trim(),password:pw});
+ if(error){if(el)el.textContent=/invalid/i.test(error.message)?'E-mailadres of wachtwoord klopt niet.':'Inloggen lukt niet: '+error.message;return}
+ startSession(data.session);
+}
+window.addEventListener('online',()=>{flushPending();if(S.mode==='db')loadRemote()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.mode==='db')loadRemote()});
+
+/* ================= WEERGAVE ================= */
+const ICON={
+ dag:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+ training:'<path d="M6.5 7v10M3.5 9.5v5M17.5 7v10M20.5 9.5v5M6.5 12h11"/>',
+ menu:'<path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10M17 21V3c-2.2 1.6-3 4.5-3 8h3"/>',
+ boodschappen:'<path d="M3 4h2.2l2.3 11h10.8L21 7.5H6.8"/><circle cx="10" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/>',
+ meer:'<circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/>'};
+const NAV=[['dag','Vandaag'],['training','Training'],['menu','Menu'],['boodschappen','Lijst'],['meer','Meer']];
+const MEER_TABS=['meer','voortgang','profielen','kennis'];
+function render(){
+ const a=document.activeElement;const keep=a&&a.id?{id:a.id,s:a.selectionStart,e:a.selectionEnd}:null;
+ document.getElementById('personSeg').hidden=S.mode==='login';
+ if(S.mode==='login'){setSave('','Niet ingelogd');document.querySelector('nav.bottom').hidden=true;document.getElementById('app').innerHTML=vLogin();renderSheet();return}
+ document.querySelector('nav.bottom').hidden=false;
+ document.getElementById('personSeg').innerHTML=['p1','p2'].map(pid=>`<button data-act="person" data-v="${pid}" aria-pressed="${S.ui.person===pid}">${esc(S.set.personen[pid].naam)}</button>`).join('');
+ const cur=MEER_TABS.includes(S.ui.tab)?'meer':S.ui.tab;
+ document.getElementById('nav').innerHTML=NAV.map(([k,l])=>`<button data-act="tab" data-v="${k}" ${cur===k?'aria-current="page"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>${l}</button>`).join('');
+ const v={dag:vDag,training:vTraining,menu:vMenu,boodschappen:vShop,meer:vMeer,voortgang:vVoortgang,profielen:vProfielen,kennis:vKennis}[S.ui.tab];
+ document.getElementById('app').innerHTML=v();
+ renderSheet();
+ if(keep){const el=document.getElementById(keep.id);if(el){el.focus({preventScroll:true});try{if(keep.s!=null)el.setSelectionRange(keep.s,keep.e)}catch(e){}}}
+}
+function vLogin(){return `<section class="card" style="margin-top:24px"><div class="eyebrow">Welkom</div><h2>Inloggen</h2><p class="sub">Log in met het account dat voor jou is aangemaakt. Je blijft daarna ingelogd op dit toestel.</p>
+ <form id="loginform" style="display:grid;gap:12px" autocomplete="on">
+  <label class="f" for="li-email">E-mailadres<input type="email" id="li-email" autocomplete="username" required></label>
+  <label class="f" for="li-pw">Wachtwoord<input type="password" id="li-pw" autocomplete="current-password" required></label>
+  <button class="btn primary block" type="submit">Inloggen</button>
+  <p class="small muted" id="loginmsg" role="status"></p>
+ </form></section>`}
+function weekNav(){const m=curMonday();const lbl=S.ui.week===0?'Deze week':S.ui.week===1?'Volgende week':S.ui.week===-1?'Vorige week':'Week '+curWeek().split('W')[1];
+ return `<div class="weeknav"><button class="iconbtn" data-act="week" data-v="-1" aria-label="Vorige week">‹</button><div style="text-align:center"><strong>${lbl}</strong><div class="small muted num">${dShort(m)} – ${dShort(addDays(m,6))}</div></div><button class="iconbtn" data-act="week" data-v="1" aria-label="Volgende week">›</button></div>`}
+function dayStrip(pid){const m=curMonday();const p=S.set.personen[pid];return `<div class="days">${DAYS.map((d,i)=>`<button class="day t-${p.schema[d]}" data-act="day" data-v="${i}" aria-pressed="${S.ui.day===i}" aria-label="${DAYN[d]}, ${TYPES[p.schema[d]]}"><b>${d}</b><span>${addDays(m,i).getDate()}</span></button>`).join('')}</div>`}
+function pill(type){return `<span class="pill t-${type}"><i></i>${TYPES[type]}</span>`}
+function itemLine([id,g]){const x=ING[id];if(!x)return '';let q=Math.round(g)+' '+(x[8]||'g');if(x[7]&&COUNT.includes(id)){const n=Math.round(g/x[7]*2)/2;const w=id==='brood'||id==='roggebrood'?(n===1?'sneetje':'sneetjes'):id==='ei'?(n===1?'ei':'eieren'):'st';q=`${fmt(n,n%1?1:0)} ${w}`}return `<li>${esc(x[0].replace(/ \(.*\)$/,''))} <span class="muted num">· ${q}</span></li>`}
+function macroBars(tot,t){return `<div class="bars">${[['Energie',tot.k,t.kcal,'kcal'],['Eiwit',tot.p,t.prot,'g'],['Koolhydraten',tot.c,t.carb,'g'],['Vet',tot.f,t.fat,'g']].map(([n,v,g,u])=>`<div><div class="between"><span class="small"><b>${n}</b></span><span class="small num muted">${fmt(v)} / ${fmt(g)} ${u}</span></div><div class="bar ${v>g*1.1?'over':''}"><div style="width:${Math.min(100,v/g*100)}%"></div></div></div>`).join('')}</div>`}
+function tagChips(tags){return tags.filter(t=>TAGS[t]).map(t=>`<span class="tag">${TAGS[t].replace(' (≤ 30 min)','')}</span>`).join(' ')}
+
+function vDag(){
+ const pid=S.ui.person;const date=addDays(curMonday(),S.ui.day);const pl=dayPlan(pid,date);const {type,t,dk}=pl;
+ let act;
+ if(type==='krachtA'||type==='krachtB'){const s=SESSIONS[type==='krachtA'?'A':'B'];act=`<div class="note"><b>${s.n} vanavond, 19:30–20:15.</b> ${esc(s.focus)}. Max 45 minuten, 2–3 herhalingen in reserve.<div style="margin-top:10px"><button class="btn primary small" data-act="tab" data-v="training">Open training</button></div></div>`}
+ else if(type==='voetbal')act=`<div class="note"><b>Voetbal 60–90 min.</b> Rond 07:00 iets lichts (banaan, twee boterhammen met jam of honing). Water voor vertrek, niet vlak voor de aftrap heel veel. Tijdens de wedstrijd water; sportdrank alleen bij hoge intensiteit of warmte. Daarna een normale maaltijd met eiwit en koolhydraten.</div>`;
+ else if(type==='voorbereiding')act=`<div class="note"><b>Voorbereiding op zondag.</b> Lichte mobiliteit en herstel. Het diner krijgt een ruimere koolhydraatportie.</div>`;
+ else if(type==='cardio')act=`<div class="note"><b>Cardio zoals je gewend bent.</b> Rustig tot 60 minuten kan nuchter; bij intervallen eerst een banaan.</div>`;
+ else if(type==='sport')act=`<div class="note"><b>Sportdag.</b> Iets meer koolhydraten rond de inspanning.</div>`;
+ else act=`<div class="note">Herstel: rustig bewegen en wandelen, geen zware extra training.</div>`;
+ const r=ROUTINE[dk];
+ return `
+ <section class="card">${weekNav()}${dayStrip(pid)}</section>
+ <section class="card">
+  <div class="between"><div><div class="eyebrow">${DAYN[dk]} ${dShort(date)}</div><h2>${TYPES[type]}</h2></div>${pill(type)}</div>
+  <div class="targets" style="margin:12px 0">
+   <div class="tgt"><b class="num">${fmt(t.kcal)}</b><span>kcal</span></div><div class="tgt"><b class="num">${t.prot}</b><span>g eiwit</span></div>
+   <div class="tgt"><b class="num">${t.carb}</b><span>g koolh.</span></div><div class="tgt"><b class="num">${t.fat}</b><span>g vet</span></div>
+  </div>${act}
+ </section>
+ <section class="card">
+  <h2>Eten vandaag</h2><p class="sub">Tik op Wissel om een ander ontbijt, lunch of diner te kiezen. Porties passen zich aan.</p>
+  ${macroBars(pl.tot,t)}
+  <div style="margin-top:14px">${pl.meals.map(m=>`<div class="meal"><div class="mh"><div class="t"><div class="lbl">${esc(m.lbl)}</div><div class="name">${esc(m.n)}</div><div class="small muted num">${fmt(macros(m.i).k)} kcal · ${fmt(macros(m.i).p)} g eiwit${m.mult?` · jouw portie ${fmt(m.mult.k,2)}× koolh.`:''}</div></div>${m.pick?`<button class="btn small ghost" data-act="openPick" data-kind="${m.pick}" data-dk="${dk}">Wissel</button>`:''}</div><details><summary class="small">Ingrediënten</summary><ul>${m.i.map(itemLine).join('')}</ul></details></div>`).join('')}</div>
+ </section>
+ <section class="card">
+  <h2>Ochtendroutine · ${esc(r.t)}</h2><p class="sub">Max 5 minuten, beheerst en laag-impact.</p>
+  <ol class="routine">${r.i.map(([k,t])=>`<li><button class="rbtn" data-act="uitleg" data-v="${k}"><b>${esc(MOVES[k].n)}</b><span>${esc(t)}</span><em>Bekijk</em></button></li>`).join('')}</ol>
+  ${dk==='zo'?'<p class="tip" style="margin-top:8px">Geen warming-up voor voetbal: doe voor de wedstrijd nog een geleidelijke, sportspecifieke warming-up.</p>':''}
+ </section>`;
+}
+
+/* ----- training ----- */
+function sessionFor(pid,date){if(S.ui.sessie)return S.ui.sessie;return S.set.personen[pid].schema[dkOf(date)]==='krachtB'?'B':'A'}
+function logId(pid,date,s){return `${pid}_${ymd(date)}_${s}`}
+function lastLogFor(pid,exId,before,v){const arr=Object.values(S.logs).filter(l=>l.persoon===pid&&l.datum<before&&l.ex&&l.ex[exId]&&(l.ex[exId].v||0)===v).sort((a,b)=>a.datum<b.datum?1:-1);return arr[0]?{datum:arr[0].datum,d:arr[0].ex[exId],enkel:arr[0].enkel}:null}
+function getDraft(pid,date,s){
+ const id=logId(pid,date,s);if(S.draft[id])return S.draft[id];
+ const saved=S.logs[id];const p=S.set.personen[pid];const d={ex:{},enkel:'',notitie:''};
+ for(const ex of SESSIONS[s].ex){
+  if(saved&&saved.ex&&saved.ex[ex.id]){d.ex[ex.id]=clone(saved.ex[ex.id]);continue}
+  const v=p.varianten[ex.id]||0;const last=lastLogFor(pid,ex.id,ymd(date),v);
+  d.ex[ex.id]={v,sets:Array.from({length:ex.sets},(_,i)=>({kg:last&&last.d.sets[i]?last.d.sets[i].kg:(ex.v[v].t==='kb'?20:''),reps:''}))}}
+ if(saved){d.enkel=saved.enkel??'';d.notitie=saved.notitie||''}
+ S.draft[id]=d;return d;
+}
+function stepper(id,val,attrs,unit){return `<div class="stepper"><button type="button" data-act="step" ${attrs} data-d="-1" aria-label="${unit} minder">−</button><input type="number" inputmode="decimal" id="${id}" value="${esc(val)}" data-act="set" ${attrs} aria-label="${unit}"><button type="button" data-act="step" ${attrs} data-d="1" aria-label="${unit} meer">+</button><span class="u">${unit}</span></div>`}
+function vTraining(){
+ const pid=S.ui.person;const p=S.set.personen[pid];const date=addDays(curMonday(),S.ui.day);const s=sessionFor(pid,date);const ses=SESSIONS[s];const d=getDraft(pid,date,s);const id=logId(pid,date,s);
+ const exHtml=ses.ex.map(ex=>{const st=d.ex[ex.id];const v=st.v||0;const vt=ex.v[v];const last=lastLogFor(pid,ex.id,ymd(date),v);const noKg=vt.t==='trx'||vt.t==='bw';
+  let prog='';if(last){const top=last.d.sets.every(x=>Number(x.reps)>=ex.max);prog=`<div class="tip">Vorige keer: ${esc(last.d.sets.map(x=>(!noKg&&x.kg!==''&&x.kg!=null?x.kg+' kg × ':'')+(x.reps||'–')).join(' · '))}</div>`+(top?`<div class="prog">${INC[vt.t]}</div>`:'');
+   if(p.enkel&&last.enkel!==''&&Number(last.enkel)>3)prog+=`<div class="tip" style="color:var(--warn)">Enkel scoorde vorige keer ${esc(last.enkel)}/10: houd de belasting gelijk of kies de rustigere variant.</div>`}
+  return `<div class="ex"><div class="between"><div><b class="n">${esc(vt.n)}</b><div class="small muted num">${ex.sets} × ${ex.min===ex.max?ex.min:ex.min+'–'+ex.max} · rust ${ex.rust}</div></div><button class="btn small ghost" data-act="uitleg" data-v="${vt.s}">Uitleg</button></div>
+   ${ex.v.length>1?`<select id="var-${ex.id}" data-act="variant" data-ex="${ex.id}" aria-label="Variant">${ex.v.map((x,i)=>`<option value="${i}" ${i===v?'selected':''}>${esc(x.n)}</option>`).join('')}</select>`:''}
+   <div class="tip">${esc(ex.note)}</div>${prog}
+   ${st.sets.map((x,i)=>{const base=`data-ex="${ex.id}" data-i="${i}"`;return `<div class="setrow ${noKg?'one':''}"><span class="lbl">Set ${i+1}</span>${noKg?'':stepper(`kg-${ex.id}-${i}`,x.kg,`${base} data-f="kg" data-s="${STEP[vt.t]||1}"`,'kg')}${stepper(`rp-${ex.id}-${i}`,x.reps,`${base} data-f="reps" data-s="1"`,ex.id==='suitcase'?'stappen':'herhalingen')}</div>`}).join('')}
+  </div>`}).join('');
+ const hist=Object.values(S.logs).filter(l=>l.persoon===pid).sort((a,b)=>a.datum<b.datum?1:-1).slice(0,8);
+ return `
+ <section class="card">${weekNav()}${dayStrip(pid)}</section>
+ <section class="card">
+  <div class="between"><div><div class="eyebrow">${DAYN[dkOf(date)]} ${dShort(date)}</div><h2>${ses.n}</h2><div class="small muted">${esc(ses.focus)}</div></div>
+  <div class="seg" role="group" aria-label="Sessie"><button data-act="sessie" data-v="A" aria-pressed="${s==='A'}">A</button><button data-act="sessie" data-v="B" aria-pressed="${s==='B'}">B</button></div></div>
+  <div class="note" style="margin:12px 0"><b>Warming-up:</b> ${esc(ses.warm)}</div>
+  <div style="display:grid;gap:10px">${exHtml}</div>
+  <p class="tip" style="margin-top:12px">${esc(ses.tip)}</p>
+  ${p.enkel?`<label class="f" for="enkel" style="margin-top:10px">Enkel: pijn tijdens training (0–10)<input type="number" inputmode="numeric" min="0" max="10" id="enkel" data-act="draft" data-f="enkel" value="${esc(d.enkel)}"></label>`:''}
+  <label class="f" for="notitie" style="margin-top:10px">Notitie<textarea id="notitie" data-act="draft" data-f="notitie" placeholder="Hoe voelde het?">${esc(d.notitie)}</textarea></label>
+  <button class="btn primary block" style="margin-top:12px" data-act="saveTraining" data-id="${id}" data-s="${s}">${S.logs[id]?'Training bijwerken':'Training opslaan'}</button>
+ </section>
+ <section class="card"><h2>Laatste trainingen</h2>
+  ${hist.length?`<div class="tablewrap"><table><thead><tr><th>Datum</th><th>Sessie</th><th class="n">Sets</th><th class="n">Volume</th></tr></thead><tbody>${hist.map(l=>{let sets=0,vol=0;Object.values(l.ex||{}).forEach(e=>e.sets.forEach(x=>{if(x.reps){sets++;vol+=(Number(x.kg)||0)*(Number(x.reps)||0)}}));return `<tr><td class="num">${esc(l.datum.slice(8)+'-'+l.datum.slice(5,7))}</td><td>${SESSIONS[l.sessie]?SESSIONS[l.sessie].n:''}</td><td class="n">${sets}</td><td class="n">${fmt(vol)} kg</td></tr>`}).join('')}</tbody></table></div>`:'<p class="sub">Nog geen trainingen. Vul je sets in en tik op Training opslaan; volgende keer zie je je vorige waarden en een progressie-advies.</p>'}
+ </section>`;
+}
+
+/* ----- menu ----- */
+function vMenu(){
+ const wk=curWeek();const m=menuOf(wk);const mon=curMonday();const saved=!!S.menus[wk];
+ const rows=DAYS.map((dk,i)=>{const date=addDays(mon,i);const dish=DISH[m.diner[dk]];
+  const per=['p1','p2'].map(pid=>{const pl=dayPlan(pid,date);const dm=pl.meals.find(x=>x.key==='diner');return{naam:pl.p.naam,type:pl.type,items:dm.i,mult:dm.mult}});
+  const kids=S.set.kinderen>0?dish.i.map(([id,g])=>[id,g*S.set.kindFactor*S.set.kinderen]):[];
+  return `<div class="dcard"><div class="between"><div><div class="eyebrow">${DAYN[dk]} ${dShort(date)}${dk==='wo'||dk==='za'?' · boodschappen':''}</div><div class="dname">${esc(dish.n)}</div></div><button class="btn small ghost" data-act="openPick" data-kind="diner" data-dk="${dk}">Wissel</button></div>
+   <div class="row" style="gap:5px">${tagChips(dish.t)}<span class="tag">${dish.min} min</span></div>
+   <div class="row" style="gap:6px">${per.map(x=>`<span class="pill t-${x.type}"><i></i>${esc(x.naam)}: ${TYPES[x.type].replace(' voetbal','')}</span>`).join('')}</div>
+   <details><summary class="small">Porties per persoon</summary><div style="display:grid;gap:10px;margin-top:4px">
+    ${per.map(x=>`<div><div class="small"><b>${esc(x.naam)}</b> <span class="muted">· ${fmt(x.mult.e,2)}× eiwit, ${fmt(x.mult.k,2)}× koolh.</span></div><ul class="small" style="margin:2px 0 0;padding-left:18px">${x.items.map(itemLine).join('')}</ul></div>`).join('')}
+    ${kids.length?`<div><div class="small"><b>Kinderen samen</b> <span class="muted">· ${S.set.kinderen} × ${fmt(S.set.kindFactor*100)}%</span></div><ul class="small" style="margin:2px 0 0;padding-left:18px">${kids.map(itemLine).join('')}</ul></div>`:''}
+   </div></details></div>`}).join('');
+ return `<section class="card">${weekNav()}</section>
+ <section class="card"><div class="between"><div><h2>Gezinsmenu</h2><p class="sub" style="margin:0">${Object.keys(DISH).length} diners om uit te kiezen. Iedereen eet hetzelfde; alleen de portie verschilt.</p></div></div>
+  <button class="btn block" style="margin-top:12px" data-act="newMenu">Nieuw weekvoorstel</button>
+  <p class="tip" style="margin-top:8px">Een voorstel heeft 2× kip, 1× vis, 2× vega, 1× vlees en pasta op zaterdag. Op krachtavonden kiest het iets snels.${saved?'':' Wissel een gerecht om het menu vast te leggen.'}</p>
+  <div style="margin-top:6px">${rows}</div></section>`;
+}
+
+/* ----- keuzelijst (bottom sheet) ----- */
+function openPick(kind,dk){S.ui.sheet={kind,dk,pid:S.ui.person,q:'',tag:''};document.body.classList.add('sheet-open');render();setTimeout(()=>{const el=document.getElementById('pickq');if(el&&window.matchMedia('(pointer:fine)').matches)el.focus()},50)}
+function closeSheet(){S.ui.sheet=null;document.body.classList.remove('sheet-open');render()}
+function renderSheet(){
+ const box=document.getElementById('sheet');const sh=S.ui.sheet;if(!sh){box.hidden=true;box.innerHTML='';box.dataset.cur='';return}
+ if(sh.kind==='uitleg'){
+  if(box.dataset.cur==='u:'+sh.v&&!box.hidden)return;
+  const mv=MOVES[sh.v]||{n:sh.v,s:[],l:''};box.hidden=false;box.dataset.cur='u:'+sh.v;
+  box.innerHTML=`<div class="scrim" data-act="closeSheet"></div><div class="panel" role="dialog" aria-modal="true" aria-label="${esc(mv.n)}">
+   <div class="head"><div class="grip"></div><div class="between"><h2 style="font-family:var(--f-display);font-size:20px;margin:0">${esc(mv.n)}</h2><button class="iconbtn" data-act="closeSheet" aria-label="Sluiten">×</button></div></div>
+   <div class="list"><div class="anim"><video id="uvid" autoplay loop muted playsinline preload="auto"><source src="media/${sh.v}.mp4" type="video/mp4"><source id="ulast" src="media/${sh.v}.webm" type="video/webm"></video><div class="anim-ph" id="uph" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Animatie volgt</span></div></div>
+   <ol class="steps">${mv.s.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${mv.l?`<div class="note"><b>Let op:</b> ${esc(mv.l)}</div>`:''}</div></div>`;
+  const ph=document.getElementById('uph'),v=document.getElementById('uvid');const fail=()=>{v.hidden=true;ph.hidden=false};
+  document.getElementById('ulast').addEventListener('error',fail);v.addEventListener('error',fail);
+  return}
+ box.dataset.cur='';
+ const wk=curWeek();const date=addDays(curMonday(),DAYS.indexOf(sh.dk));const p=S.set.personen[sh.pid];const q=sh.q.trim().toLowerCase();
+ let title,opts,cur,chips='',sub;
+ if(sh.kind==='diner'){title='Diner kiezen';sub=`${DAYN[sh.dk]} · geldt voor het hele gezin`;cur=menuOf(wk).diner[sh.dk];
+  chips=`<div class="chips">${[['','Alles'],...Object.entries(TAGS)].map(([k,l])=>`<button class="chip" data-act="pickTag" data-v="${k}" aria-pressed="${sh.tag===k}">${l}</button>`).join('')}</div>`;
+  opts=Object.entries(DISH).filter(([id,d])=>(!sh.tag||d.t.includes(sh.tag))&&(!q||d.n.toLowerCase().includes(q)||d.i.some(([i])=>ING[i][0].toLowerCase().includes(q)))).sort((a,b)=>a[1].n.localeCompare(b[1].n))
+   .map(([id,d])=>{const mm=macros(d.i);return `<button class="opt" role="option" aria-selected="${id===cur}" data-act="pickDo" data-v="${id}"><b>${esc(d.n)}</b><span class="meta">${tagChips(d.t)}<span class="k">${d.min} min · ${fmt(mm.k)} kcal · ${fmt(mm.p)} g eiwit per portie</span></span></button>`})}
+ else{const pool=sh.kind==='ontbijt'?ONTBIJT:LUNCH;title=(sh.kind==='ontbijt'?'Ontbijt':'Lunch')+' kiezen';sub=`${esc(p.naam)} · ${DAYN[sh.dk]}`;const kz=keuze(wk,sh.pid,sh.dk);cur=sh.kind==='ontbijt'?kz.o:kz.l;
+  opts=Object.entries(pool).filter(([id,o])=>!q||o.n.toLowerCase().includes(q)||(o.i||[]).some(([i])=>ING[i][0].toLowerCase().includes(q)))
+   .map(([id,o])=>{const it=poolItems(pool,id,p,sh.kind);const mm=macros(it);return `<button class="opt" role="option" aria-selected="${id===cur}" data-act="pickDo" data-v="${id}"><b>${esc(o.n)}</b><span class="meta">${o.t.filter(t=>t!=='vast').map(t=>`<span class="tag">${t}</span>`).join(' ')}<span class="k">${fmt(mm.k)} kcal · ${fmt(mm.p)} g eiwit</span></span><span class="tip" style="display:block;margin-top:2px">${esc(it.map(([i,g])=>ING[i][0].replace(/ \(.*\)$/,'')).join(', '))}</span></button>`})}
+ box.hidden=false;
+ box.innerHTML=`<div class="scrim" data-act="closeSheet"></div><div class="panel" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+  <div class="head"><div class="grip"></div><div class="between"><div><h2 style="font-family:var(--f-display);font-size:19px;margin:0">${title}</h2><div class="small muted">${sub}</div></div><button class="iconbtn" data-act="closeSheet" aria-label="Sluiten">×</button></div>
+  <input type="search" id="pickq" data-act="pickQ" placeholder="Zoek op gerecht of ingrediënt" value="${esc(sh.q)}" aria-label="Zoeken">${chips}
+  ${sh.kind!=='diner'?`<label class="check" for="pickall" style="padding:0"><input type="checkbox" id="pickall" data-act="pickAll" ${sh.all?'checked':''}><span class="small">Voor de hele week instellen</span></label>`:''}</div>
+  <div class="list" role="listbox">${opts.length?opts.join(''):'<p class="sub" style="margin-top:12px">Niets gevonden. Probeer een ander woord of filter.</p>'}</div></div>`;
+}
+function pickDo(id){
+ const sh=S.ui.sheet;const wk=curWeek();
+ if(sh.kind==='diner')setMenu(wk,m=>{m.diner[sh.dk]=id});
+ else setMenu(wk,m=>{m.keuze[sh.pid]=m.keuze[sh.pid]||{};const days=sh.all?DAYS:[sh.dk];days.forEach(d=>{m.keuze[sh.pid][d]=Object.assign({},m.keuze[sh.pid][d],{[sh.kind==='ontbijt'?'o':'l']:id})})});
+ closeSheet();
+}
+
+/* ----- boodschappen ----- */
+function listText(key,tot,extra){let s=(key==='wo'?'Boodschappen woensdag':'Boodschappen zaterdag')+'\n';CATS.forEach(c=>{const it=Object.entries(tot).filter(([id,g])=>g>=1&&ING[id][5]===c);if(!it.length)return;s+=`\n${c}\n`+it.map(([id,g])=>`- ${ING[id][0]}: ${qtyLabel(id,g)}`).join('\n')+'\n'});if(extra)s+='\nExtra\n'+extra+'\n';return s}
+function shopList(key,dates,wk){
+ const tot=shoppingFor(dates);const m=menuOf(wk);const done=m.afgevinkt[key]||{};
+ const byCat={};Object.entries(tot).forEach(([id,g])=>{if(g<1)return;(byCat[ING[id][5]]=byCat[ING[id][5]]||[]).push([id,g])});
+ const total=Object.values(byCat).flat().length;const nDone=Object.keys(done).filter(k=>done[k]&&tot[k]>=1).length;
+ const body=CATS.filter(c=>byCat[c]).map(c=>`<div class="cat">${c}${c==='Voorraadkast'?' · eerst thuis checken':''}</div><div class="shop">${byCat[c].sort((a,b)=>ING[a[0]][0].localeCompare(ING[b[0]][0])).map(([id,g])=>`<label class="${done[id]?'done':''}" for="chk-${key}-${id}"><input type="checkbox" id="chk-${key}-${id}" data-act="tick" data-list="${key}" data-id="${id}" ${done[id]?'checked':''}><span class="n">${esc(ING[id][0])}</span><span class="q">${qtyLabel(id,g)}</span></label>`).join('')}</div>`).join('');
+ return `<section class="card"><div class="eyebrow">${key==='wo'?'Moment 1':'Moment 2'} · ${nDone}/${total} in de kar</div><h2>${key==='wo'?'Woensdag':'Zaterdag'} ${dShort(dates[0])}</h2>
+  <p class="sub">Voor ${dates.map(d=>DAYN[dkOf(d)].toLowerCase()).join(', ')}</p>
+  <div class="bar"><div style="width:${total?nDone/total*100:0}%"></div></div>
+  <button class="btn block" style="margin-top:12px" data-act="copy" data-list="${key}">Kopieer lijst</button>
+  ${body}
+  <label class="f" for="extra-${key}" style="margin-top:14px">Extra (koffie, wc-papier, iets lekkers…)<textarea id="extra-${key}" data-act="extra" data-list="${key}">${esc(m.extra[key]||'')}</textarea></label>
+  <textarea id="copy-${key}" aria-hidden="true" tabindex="-1" style="position:absolute;left:-9999px;width:1px;height:1px">${esc(listText(key,tot,m.extra[key]))}</textarea></section>`}
+function vShop(){const mon=curMonday();const wk=curWeek();const sel=S.ui.shop||((new Date().getDay()+6)%7>=2&&(new Date().getDay()+6)%7<=4&&S.ui.week===0?'wo':(S.ui.week===0&&(new Date().getDay()+6)%7>4?'za':'wo'));
+ const wo=[2,3,4].map(i=>addDays(mon,i)),za=[5,6,7,8].map(i=>addDays(mon,i));
+ return `<section class="card">${weekNav()}<div class="seg" role="group" aria-label="Boodschappenmoment" style="display:flex;margin-top:12px"><button style="flex:1" data-act="shopSel" data-v="wo" aria-pressed="${sel==='wo'}">Woensdag</button><button style="flex:1" data-act="shopSel" data-v="za" aria-pressed="${sel==='za'}">Zaterdag</button></div>
+ <p class="tip" style="margin:10px 0 0">Woensdag dekt wo–vr, zaterdag dekt za–di. Met jullie ontbijt, lunch en tussendoortjes, het gezinsdiner en een basis voor ${S.set.kinderen} ${S.set.kinderen===1?'kind':'kinderen'}.</p></section>
+ ${sel==='wo'?shopList('wo',wo,wk):shopList('za',za,wk)}`}
+
+/* ----- meer ----- */
+function vMeer(){return `<section class="card"><h2>Meer</h2><p class="sub">Voortgang, instellingen en achtergrond.</p><div class="tiles">
+ <button class="tile" data-act="tab" data-v="voortgang"><div><b>Voortgang</b><span>Wekelijkse check-in, gewichtstrend en bijsturen</span></div></button>
+ <button class="tile" data-act="tab" data-v="profielen"><div><b>Profielen</b><span>Gegevens, weekschema, vaste maaltijden en gezin</span></div></button>
+ <button class="tile" data-act="tab" data-v="kennis"><div><b>Kennis</b><span>Waarom het plan zo werkt</span></div></button></div></section>
+ <section class="card"><h2>Op je beginscherm</h2><p class="sub" style="margin:0"><b>iPhone:</b> open in Safari, tik op Deel en kies Zet op beginscherm. <b>Android:</b> open in Chrome, tik op ⋮ en kies App installeren.</p></section>
+ ${S.mode==='db'?`<section class="card"><div class="between"><div><h2>Account</h2><p class="sub" style="margin:0">Ingelogd als ${esc(S.email||'')}</p></div><button class="btn small" data-act="logout">Uitloggen</button></div></section>`:''}
+ ${!CONFIGURED?'<section class="card"><p class="sub" style="margin:0">Testmodus: nog niet gekoppeld aan de gezinsdatabase. Gegevens blijven op dit toestel.</p></section>':''}`}
+function backBtn(){return `<button class="btn small" data-act="tab" data-v="meer" style="justify-self:start">‹ Meer</button>`}
+
+/* ----- voortgang ----- */
+const ciId=(pid,wk)=>pid+'_'+wk;
+function getCi(pid,wk){return S.checkins[ciId(pid,wk)]||{persoon:pid,week:wk,gewicht:{},taille:'',energie:'',slaap:'',enkel:'',check:[false,false,false,false,false],notitie:''}}
+function avgW(ci){const v=Object.values(ci.gewicht||{}).map(Number).filter(x=>x>0);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null}
+const CHECKS=['Gemiddeld ongeveer mijn eiwitdoel gehaald','Twee krachttrainingen gedaan of bewust aangepast','Genoeg gegeten voor voetbal en training','Gewicht / middelomtrek over meerdere weken de goede kant op','Energie, slaap en enkelreactie in de gaten gehouden'];
+function vVoortgang(){
+ const pid=S.ui.person;const p=S.set.personen[pid];const wk=curWeek();const ci=getCi(pid,wk);const mon=curMonday();const a=avgW(ci);
+ const hist=Object.values(S.checkins).filter(c=>c.persoon===pid).map(c=>({wk:c.week,w:avgW(c),t:Number(c.taille)||null,e:c.energie,s:c.slaap})).filter(x=>x.w||x.t).sort((x,y)=>x.wk<y.wk?-1:1).slice(-12);
+ let advies='Vul minstens 3 weken in; daarna geeft de app hier een bijstuuradvies.';
+ const ws=hist.filter(h=>h.w);if(ws.length>=3){const l=ws.slice(-3);const per=(l[2].w-l[0].w)/2;const ts=hist.filter(h=>h.t);const tDown=ts.length>=2&&ts[ts.length-1].t<ts[0].t;
+  if(per<-0.5)advies=`Je verliest ${fmt(-per,1)} kg per week: dat is snel. Voeg 100–200 kcal per dag toe (lager tekort in Profielen).`;
+  else if(per>-0.1&&!tDown)advies='Gewicht en middelomtrek bewegen niet. Volg je het plan redelijk? Verlaag dan met 100–150 kcal per dag (hoger tekort in Profielen) of beweeg dagelijks wat meer. Eén ding tegelijk.';
+  else advies=`Op koers (${fmt(per,2)} kg per week${tDown?', middelomtrek daalt':''}). Niets veranderen.`}
+ const sel=(f,v)=>`<select id="ci-${f}" data-act="ci" data-f="${f}" style="width:100%">${['','1','2','3','4','5'].map(x=>`<option value="${x}" ${String(v)===x?'selected':''}>${x||'–'}</option>`).join('')}</select>`;
+ return `${backBtn()}<section class="card">${weekNav()}</section>
+ <section class="card"><div class="eyebrow">${esc(p.naam)}</div><h2>Wekelijkse check-in</h2><p class="sub">Weeg 3–7 ochtenden, na het toilet en voor het ontbijt.</p>
+  <div class="fgrid" style="grid-template-columns:repeat(auto-fill,minmax(92px,1fr))">${DAYS.map((d,i)=>`<label class="f" for="w-${d}">${d} ${addDays(mon,i).getDate()}<input type="number" step="0.1" inputmode="decimal" id="w-${d}" data-act="ci" data-f="gewicht" data-d="${d}" value="${esc(ci.gewicht[d]||'')}" placeholder="kg"></label>`).join('')}</div>
+  <p class="num" style="margin:12px 0">Weekgemiddelde: <b>${a?fmt(a,1)+' kg':'–'}</b></p>
+  <div class="fgrid">
+   <label class="f" for="ci-taille">Middelomtrek (cm)<input type="number" step="0.5" inputmode="decimal" id="ci-taille" data-act="ci" data-f="taille" value="${esc(ci.taille)}"></label>
+   <label class="f" for="ci-energie">Energie (1–5)${sel('energie',ci.energie)}</label>
+   <label class="f" for="ci-slaap">Slaap (1–5)${sel('slaap',ci.slaap)}</label>
+   ${p.enkel?`<label class="f" for="ci-enkel">Enkel ochtend erna (0–10)<input type="number" inputmode="numeric" min="0" max="10" id="ci-enkel" data-act="ci" data-f="enkel" value="${esc(ci.enkel)}"></label>`:''}
+  </div>
+  <h3>Checklist</h3>${CHECKS.map((c,i)=>`<label class="check" for="cc-${i}"><input type="checkbox" id="cc-${i}" data-act="cicheck" data-i="${i}" ${ci.check&&ci.check[i]?'checked':''}><span>${c}</span></label>`).join('')}
+  <label class="f" for="ci-notitie" style="margin-top:8px">Notitie<textarea id="ci-notitie" data-act="ci" data-f="notitie">${esc(ci.notitie)}</textarea></label>
+ </section>
+ <section class="card"><h2>Trend en bijsturen</h2><div class="note" style="margin:8px 0 12px">${esc(advies)}</div>${chart(hist)}
+  ${hist.length?`<div class="tablewrap" style="margin-top:10px"><table><thead><tr><th>Week</th><th class="n">Gewicht</th><th class="n">Middel</th><th class="n">E</th><th class="n">S</th></tr></thead><tbody>${hist.slice().reverse().map(h=>`<tr><td>w${h.wk.split('-W')[1]}</td><td class="n">${h.w?fmt(h.w,1):'–'}</td><td class="n">${h.t?fmt(h.t,1):'–'}</td><td class="n">${esc(h.e||'–')}</td><td class="n">${esc(h.s||'–')}</td></tr>`).join('')}</tbody></table></div>`:''}
+ </section>`;
+}
+function chart(hist){const pts=hist.filter(h=>h.w);if(pts.length<2)return '<p class="sub">De grafiek verschijnt zodra er twee weken met gewicht zijn ingevuld.</p>';
+ const W=360,H=180,L=34,R=12,T=16,B=26;const ys=pts.map(p=>p.w);let lo=Math.floor(Math.min(...ys)-0.5),hi=Math.ceil(Math.max(...ys)+0.5);if(hi-lo<2){hi+=1;lo-=1}
+ const x=i=>L+i*(W-L-R)/(pts.length-1);const y=v=>T+(hi-v)*(H-T-B)/(hi-lo);const step=hi-lo>6?2:1;const ticks=[];for(let v=lo;v<=hi;v+=step)ticks.push(v);
+ const path=pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p.w).toFixed(1)).join(' ');
+ return `<div class="chart" role="img" aria-label="Weekgemiddelde gewicht"><svg viewBox="0 0 ${W} ${H}">
+  ${ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v}</text>`).join('')}
+  <path d="${path} L${x(pts.length-1).toFixed(1)} ${H-B} L${L} ${H-B} Z" fill="var(--accent-soft)"/><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+  ${pts.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.w)}" r="${i===pts.length-1?4.5:2.5}" fill="var(--accent)"/>${pts.length<=8||i%2===pts.length%2?`<text x="${x(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">w${p.wk.split('W')[1]}</text>`:''}`).join('')}
+  <text x="${x(pts.length-1)}" y="${y(pts[pts.length-1].w)-9}" text-anchor="end" font-size="11" font-weight="700" fill="var(--ink)">${fmt(pts[pts.length-1].w,1)} kg</text></svg></div>`}
+
+/* ----- profielen ----- */
+function vProfielen(){
+ const pid=S.ui.person;const p=S.set.personen[pid];
+ const num=(f,l,step=1)=>`<label class="f" for="${pid}-${f}">${l}<input type="number" step="${step}" inputmode="decimal" id="${pid}-${f}" data-act="prof" data-p="${pid}" data-f="${f}" value="${esc(p[f])}"></label>`;
+ const tpl=(key,label)=>`<h3>${label}</h3>${p[key].map(([id,g],i)=>`<div class="tpl-row"><select id="${pid}-${key}-${i}-id" data-act="tpl" data-p="${pid}" data-k="${key}" data-i="${i}" data-f="id" aria-label="Ingrediënt">${Object.entries(ING).sort((a,b)=>a[1][0].localeCompare(b[1][0])).map(([k,x])=>`<option value="${k}" ${k===id?'selected':''}>${esc(x[0])}</option>`).join('')}</select><input type="number" inputmode="numeric" id="${pid}-${key}-${i}-g" data-act="tpl" data-p="${pid}" data-k="${key}" data-i="${i}" data-f="g" value="${g}" aria-label="Gram"><button class="iconbtn" data-act="tplDel" data-p="${pid}" data-k="${key}" data-i="${i}" aria-label="Verwijder">×</button></div>`).join('')}<button class="btn small" data-act="tplAdd" data-p="${pid}" data-k="${key}">+ Ingrediënt</button><p class="tip">${(()=>{const m=macros(p[key]);return `${fmt(m.k)} kcal · ${fmt(m.p)} g eiwit · ${fmt(m.c)} g koolh. · ${fmt(m.f)} g vet`})()}</p>`;
+ const avg=Math.round(DAYS.reduce((a,d)=>a+targets(p,p.schema[d]).kcal,0)/7);
+ return `${backBtn()}
+ <section class="card"><div class="between"><div><div class="eyebrow">Profiel</div><h2>${esc(p.naam)}</h2></div>${p.voorbeeld?'<span class="pill">Voorbeeld</span>':''}</div>
+  <p class="sub">Wissel bovenin van persoon om het andere profiel te bewerken. Rustverbranding ${fmt(bmr(p))} kcal × ${fmt(p.pal,2)} − ${p.tekort} kcal tekort; weekgemiddelde ${fmt(avg)} kcal.</p>
+  <div class="fgrid">
+   <label class="f" for="${pid}-naam">Naam<input id="${pid}-naam" data-act="prof" data-p="${pid}" data-f="naam" value="${esc(p.naam)}"></label>
+   <label class="f" for="${pid}-geslacht">Geslacht<select id="${pid}-geslacht" data-act="prof" data-p="${pid}" data-f="geslacht"><option value="m" ${p.geslacht==='m'?'selected':''}>Man</option><option value="v" ${p.geslacht==='v'?'selected':''}>Vrouw</option></select></label>
+   ${num('leeftijd','Leeftijd')}${num('lengte','Lengte (cm)')}${num('gewicht','Gewicht (kg)',0.1)}${num('pal','Activiteitsfactor',0.05)}${num('tekort','Tekort (kcal)',25)}${num('eiwitPerKg','Eiwit (g/kg)',0.1)}${num('vetPerKg','Vet (g/kg)',0.1)}${num('eMult','Eiwitportie diner (×)',0.05)}
+  </div>
+  <label class="check" for="${pid}-enkel"><input type="checkbox" id="${pid}-enkel" data-act="profchk" data-p="${pid}" data-f="enkel" ${p.enkel?'checked':''}><span>Enkel volgen in training en check-in</span></label>
+ </section>
+ <section class="card"><h2>Weekschema en doelen</h2>
+  <div class="tablewrap"><table><thead><tr><th>Dag</th><th>Type</th><th class="n">kcal</th><th class="n">Eiwit</th></tr></thead><tbody>${DAYS.map(d=>{const ty=p.schema[d];const t=targets(p,ty);return `<tr><td>${d}</td><td><select id="${pid}-sch-${d}" data-act="schema" data-p="${pid}" data-d="${d}" aria-label="Dagtype ${DAYN[d]}" style="width:100%;min-width:140px">${Object.entries(TYPES).map(([k,l])=>`<option value="${k}" ${k===ty?'selected':''}>${l}</option>`).join('')}</select></td><td class="n">${fmt(t.kcal)}</td><td class="n">${t.prot}</td></tr>`}).join('')}</tbody></table></div>
+ </section>
+ <section class="card"><h2>Vaste maaltijden</h2><p class="sub">Gebruikt als je bij Vandaag niets anders kiest.</p>${tpl('ontbijt','Ontbijt')}${tpl('lunch','Lunch')}</section>
+ <section class="card"><h2>Gezin</h2><p class="sub">Kinderen eten mee met het diner; de lijst rekent ook een basis ontbijt en lunch voor ze mee.</p>
+  <div class="fgrid">
+   <label class="f" for="g-kinderen">Aantal kinderen<input type="number" inputmode="numeric" min="0" id="g-kinderen" data-act="gezin" data-f="kinderen" value="${S.set.kinderen}"></label>
+   <label class="f" for="g-factor">Kinderportie (×)<input type="number" step="0.05" inputmode="decimal" min="0" id="g-factor" data-act="gezin" data-f="kindFactor" value="${S.set.kindFactor}"></label>
+  </div>
+  <label class="check" for="g-basis"><input type="checkbox" id="g-basis" data-act="gezinchk" data-f="kindBasis" ${S.set.kindBasis?'checked':''}><span>Ontbijt en lunch kinderen meenemen</span></label>
+  <p class="tip">${S.mode==='db'?'Alles wordt gedeeld opgeslagen in de gezinsdatabase.':'Testmodus: wijzigingen blijven op dit toestel.'}</p>
+ </section>`;
+}
+function vKennis(){return `${backBtn()}<section class="card kennis"><h2>De kern</h2><p>Eet gemiddeld rond je dagdoel met genoeg eiwit, train twee keer per week progressief maar enkelvriendelijk, houd cardio en voetbal aan, doe de korte ochtendroutine en stuur na 3–4 weken bij op basis van trends en herstel.</p></section>
+ <section class="card kennis"><h2>Energie en macro's</h2><p>Doelen zijn startschattingen: rustverbranding (Mifflin-St Jeor) × activiteitsfactor, min een bescheiden tekort voor 0,2–0,4 kg per week. Krachtdagen +150 kcal, de dag voor voetbal +200, voetbal +400, vooral als koolhydraten.</p><p>Eiwit circa 1,9 g/kg voor Dion, binnen de 1,4–2,0 g/kg uit het ISSN-standpunt. Vet circa 0,9 g/kg. Koolhydraten vullen de rest. Mis je eiwit, dan vult de app aan met magere kwark in de avond.</p></section>
+ <section class="card kennis"><h2>Training</h2><p>Houd 2–3 herhalingen over. Haal je in alle sets de bovenkant van de range met goede techniek, dan een kleine stap zwaarder; anders eerst herhalingen erbij. Verhoog nooit gewicht, sets en frequentie tegelijk.</p><p>Enkel: geen sprongen of explosieve draaibewegingen nodig. Let ook op de reactie later die dag en de volgende ochtend. Bij scherpe pijn, zwelling of instabiliteit: stop de oefening en vraag advies.</p></section>
+ <section class="card kennis"><h2>Voetbal</h2><p>Koolhydraten vooraf helpen; gels of sportdrank zijn geen verplichting. Licht ontbijt rond 07:00, water voor vertrek, na afloop een normale maaltijd. Koolhydraten tijdens de wedstrijd (30–60 g per uur) alleen bij hoge intensiteit of warmte, en eerst testen.</p></section>
+ <section class="card kennis"><h2>Slaap en herstel</h2><p>22:30–06:00 is een redelijke basis. Probeer twee weken geen cafeïne na de lunch, maak het laatste halfuur rustig en eindig de training met een cooling-down. Blijf je langdurig moe, snurk je veel of vermoed je ademstops: bespreek het met de huisarts.</p></section>
+ <section class="card kennis"><h2>Bronnen</h2><ul><li>Jäger e.a., ISSN Position Stand: protein and exercise (2017)</li><li>ACSM position stand over krachttraining (2026)</li><li>IOC sportvoedingsmateriaal (Athlete365)</li><li>Mifflin e.a. (1990), formule rustverbranding</li></ul><p class="tip">Dit plan vervangt geen medisch of fysiotherapeutisch advies.</p></section>`}
+
+/* ================= INTERACTIE ================= */
+function curDraft(){const pid=S.ui.person;const date=addDays(curMonday(),S.ui.day);const s=sessionFor(pid,date);return{pid,date,s,d:getDraft(pid,date,s)}}
+document.body.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;
+ if(a==='person'){S.ui.person=b.dataset.v;S.ui.sessie=null;render()}
+ else if(a==='tab'){S.ui.tab=b.dataset.v;S.ui.sessie=null;render();window.scrollTo(0,0)}
+ else if(a==='week'){S.ui.week+=Number(b.dataset.v);S.ui.sessie=null;render()}
+ else if(a==='day'){S.ui.day=Number(b.dataset.v);S.ui.sessie=null;render()}
+ else if(a==='sessie'){S.ui.sessie=b.dataset.v;render()}
+ else if(a==='shopSel'){S.ui.shop=b.dataset.v;render()}
+ else if(a==='openPick')openPick(b.dataset.kind,b.dataset.dk);
+ else if(a==='uitleg'){S.ui.sheet={kind:'uitleg',v:b.dataset.v};document.body.classList.add('sheet-open');renderSheet()}
+ else if(a==='logout'){S.sb&&S.sb.auth.signOut()}
+ else if(a==='closeSheet')closeSheet();
+ else if(a==='pickTag'){S.ui.sheet.tag=b.dataset.v;renderSheet()}
+ else if(a==='pickDo')pickDo(b.dataset.v);
+ else if(a==='newMenu'){const wk=curWeek();setMenu(wk,m=>{m.diner=genMenu(seeded(Date.now()))});render()}
+ else if(a==='step'){const {d}=curDraft();const set=d.ex[b.dataset.ex].sets[Number(b.dataset.i)];const f=b.dataset.f;const st=Number(b.dataset.s)||1;if(set[f]===''&&Number(b.dataset.d)<0)return;const cur=Number(set[f])||0;let nv=Math.max(0,Math.round((cur+st*Number(b.dataset.d))*10)/10);
+  if(cur===0&&f==='reps'&&Number(b.dataset.d)>0){const ex=SESSIONS[curDraft().s].ex.find(x=>x.id===b.dataset.ex);nv=ex.min}
+  set[f]=nv;const inp=document.getElementById((f==='kg'?'kg-':'rp-')+b.dataset.ex+'-'+b.dataset.i);if(inp)inp.value=nv}
+ else if(a==='copy'){const ta=document.getElementById('copy-'+b.dataset.list);const done=()=>{b.textContent='Gekopieerd';setTimeout(()=>{b.textContent='Kopieer lijst'},1600)};
+  try{navigator.clipboard.writeText(ta.value).then(done,()=>{fallbackCopy(ta);done()})}catch(err){fallbackCopy(ta);done()}}
+ else if(a==='saveTraining'){const {pid,date,s,d}=curDraft();const id=b.dataset.id;
+  const doc={persoon:pid,datum:ymd(date),sessie:s,ex:clone(d.ex),enkel:d.enkel===''?'':Number(d.enkel),notitie:d.notitie,ts:Date.now()};
+  S.logs[id]=doc;writeDoc('training/'+id,doc);render();b.blur()}
+ else if(a==='tplAdd'){S.set.personen[b.dataset.p][b.dataset.k].push(['banaan',120]);saveSettings();render()}
+ else if(a==='tplDel'){S.set.personen[b.dataset.p][b.dataset.k].splice(Number(b.dataset.i),1);saveSettings();render()}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.ui.sheet)closeSheet()});
+document.addEventListener('submit',e=>{if(e.target.id==='loginform'){e.preventDefault();login(document.getElementById('li-email').value,document.getElementById('li-pw').value)}});
+if('serviceWorker' in navigator&&location.protocol==='https:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+function fallbackCopy(ta){try{ta.style.left='0';ta.select();document.execCommand('copy');ta.style.left='-9999px'}catch(e){}}
+function onField(e,chg){const el=e.target;const a=el.dataset&&el.dataset.act;if(!a)return;
+ if(a==='set'){const {d}=curDraft();d.ex[el.dataset.ex].sets[Number(el.dataset.i)][el.dataset.f]=el.value===''?'':Number(el.value);return}
+ if(a==='draft'){curDraft().d[el.dataset.f]=el.value;return}
+ if(a==='pickQ'){S.ui.sheet.q=el.value;renderSheet();const q=document.getElementById('pickq');if(q){q.focus();const n=q.value.length;try{q.setSelectionRange(n,n)}catch(x){}}return}
+ if(a==='pickAll'&&chg){S.ui.sheet.all=el.checked;return}
+ if(a==='variant'&&chg){const {pid,date,s,d}=curDraft();const v=Number(el.value);const ex=d.ex[el.dataset.ex];ex.v=v;const def=SESSIONS[s].ex.find(x=>x.id===el.dataset.ex);const last=lastLogFor(pid,def.id,ymd(date),v);ex.sets=ex.sets.map((x,i)=>({kg:last&&last.d.sets[i]?last.d.sets[i].kg:(def.v[v].t==='kb'?20:''),reps:x.reps}));S.set.personen[pid].varianten[def.id]=v;saveSettings();render();return}
+ if(a==='tick'&&chg){const wk=curWeek();setMenu(wk,m=>{m.afgevinkt[el.dataset.list]=Object.assign({},m.afgevinkt[el.dataset.list],{[el.dataset.id]:el.checked})});render();return}
+ if(a==='extra'){const wk=curWeek();setMenu(wk,m=>{m.extra[el.dataset.list]=el.value});return}
+ if(a==='ci'){const pid=S.ui.person;const wk=curWeek();const id=ciId(pid,wk);const ci=clone(getCi(pid,wk));if(el.dataset.f==='gewicht')ci.gewicht[el.dataset.d]=el.value===''?'':Number(el.value);else ci[el.dataset.f]=el.value;S.checkins[id]=ci;saveCheckin(id);debounce('rr',render,900);return}
+ if(a==='cicheck'&&chg){const pid=S.ui.person;const wk=curWeek();const id=ciId(pid,wk);const ci=clone(getCi(pid,wk));ci.check=ci.check||[];ci.check[Number(el.dataset.i)]=el.checked;S.checkins[id]=ci;saveCheckin(id);return}
+ if(a==='prof'){const p=S.set.personen[el.dataset.p];const f=el.dataset.f;if(f==='naam'||f==='geslacht')p[f]=el.value;else{const n=Number(el.value);if(el.value===''||isNaN(n))return;p[f]=n}p.voorbeeld=false;saveSettings();debounce('rr',render,chg?50:900);return}
+ if(a==='profchk'&&chg){S.set.personen[el.dataset.p][el.dataset.f]=el.checked;saveSettings();render();return}
+ if(a==='schema'&&chg){const p=S.set.personen[el.dataset.p];p.schema[el.dataset.d]=el.value;p.voorbeeld=false;saveSettings();render();return}
+ if(a==='tpl'){const row=S.set.personen[el.dataset.p][el.dataset.k][Number(el.dataset.i)];if(el.dataset.f==='id')row[0]=el.value;else{const n=Number(el.value);if(isNaN(n))return;row[1]=n}saveSettings();debounce('rr',render,chg?50:900);return}
+ if(a==='gezin'){const n=Number(el.value);if(el.value===''||isNaN(n))return;S.set[el.dataset.f]=n;saveSettings();debounce('rr',render,600);return}
+ if(a==='gezinchk'&&chg){S.set[el.dataset.f]=el.checked;saveSettings();render();return}
+}
+document.body.addEventListener('input',e=>onField(e,false));
+document.body.addEventListener('change',e=>onField(e,true));
+connect();
+</script>
+
+</body>
+</html>
